@@ -1,0 +1,122 @@
+[
+  {
+    "id": "two-sum-nested-loop-bruteforce",
+    "problem_id": "two-sum",
+    "category": "nested_loop_bruteforce",
+    "expected_flaw": "Used nested loops instead of a hash map",
+    "code": "def two_sum(nums: list[int], target: int) -> list[int]:\n    for i in range(len(nums)):\n        for j in range(i + 1, len(nums)):\n            if nums[i] + nums[j] == target:\n                return [i, j]\n    return []",
+    "ground_truth_concepts": [
+      "hash map",
+      "complement",
+      "o(1) lookup",
+      "target - n"
+    ],
+    "context_invariants": [
+      "seen dictionary",
+      "single pass",
+      "indices"
+    ]
+  },
+  {
+    "id": "two-sum-duplicate-index-collision",
+    "problem_id": "two-sum",
+    "category": "duplicate_index_collision",
+    "expected_flaw": "Wrong index returned for duplicate numbers",
+    "code": "def two_sum(nums: list[int], target: int) -> list[int]:\n    for n in nums:\n        diff = target - n\n        if diff in nums:\n            return [nums.index(n), nums.index(diff)]\n    return []",
+    "ground_truth_concepts": [
+      "enumerate",
+      "indices",
+      "duplicate handling",
+      "hash map"
+    ],
+    "context_invariants": [
+      "position mapping",
+      "same element twice"
+    ]
+  },
+  {
+    "id": "valid-parentheses-bracket-counter",
+    "problem_id": "valid-parentheses",
+    "category": "bracket_counter_ordering",
+    "expected_flaw": "Counting brackets instead of using a stack",
+    "code": "def is_valid(s: str) -> bool:\n    return s.count(\"(\") == s.count(\")\") and s.count(\"[\") == s.count(\"]\") and s.count(\"{\") == s.count(\"}\")",
+    "ground_truth_concepts": [
+      "stack",
+      "lifo",
+      "bracket order",
+      "nesting"
+    ],
+    "context_invariants": [
+      "matching top of stack",
+      "closing order"
+    ]
+  },
+  {
+    "id": "valid-parentheses-stack-underflow",
+    "problem_id": "valid-parentheses",
+    "category": "stack_underflow",
+    "expected_flaw": "Popping from an empty stack",
+    "code": "def is_valid(s: str) -> bool:\n    stack = []\n    for ch in s:\n        if ch in \"({[\":\n            stack.append(ch)\n        else:\n            stack.pop()\n    return len(stack) == 0",
+    "ground_truth_concepts": [
+      "empty stack check",
+      "index error",
+      "early close",
+      "length verification"
+    ],
+    "context_invariants": [
+      "stack non-empty guard",
+      "bracket mapping"
+    ]
+  },
+  {
+    "id": "coin-change-greedy",
+    "problem_id": "coin-change",
+    "category": "greedy_suboptimal",
+    "expected_flaw": "Greedy approach gives wrong answer",
+    "code": "def coin_change(coins: list[int], amount: int) -> int:\n    coins.sort(reverse=True)\n    count = 0\n    for c in coins:\n        while amount >= c:\n            amount -= c\n            count += 1\n    return count if amount == 0 else -1",
+    "ground_truth_concepts": [
+      "dynamic programming",
+      "subproblems",
+      "optimal substructure",
+      "dp table"
+    ],
+    "context_invariants": [
+      "min coins transition",
+      "overlapping subproblems"
+    ]
+  },
+  {
+    "id": "coin-change-unmemoized-recursion",
+    "problem_id": "coin-change",
+    "category": "unmemoized_exponential_recursion",
+    "expected_flaw": "Forgot to use memoization",
+    "code": "def coin_change(coins: list[int], amount: int) -> int:\n    if amount == 0: return 0\n    if amount < 0: return -1\n    res = float(\"inf\")\n    for c in coins:\n        sub = coin_change(coins, amount - c)\n        if sub != -1: res = min(res, sub + 1)\n    return res if res != float(\"inf\") else -1",
+    "ground_truth_concepts": [
+      "memoization",
+      "cache",
+      "overlapping subproblems",
+      "time limit exceeded"
+    ],
+    "context_invariants": [
+      "state caching",
+      "amount base cases"
+    ]
+  },
+  {
+    "id": "two-sum-while-loop-stagnation",
+    "problem_id": "two-sum",
+    "category": "while_loop_stagnation",
+    "expected_flaw": "Infinite loop because pointer isn't updated",
+    "code": "def two_sum(nums: list[int], target: int) -> list[int]:\n    i = 0\n    while i < len(nums):\n        if target - nums[i] in nums:\n            return [i, nums.index(target - nums[i])]\n    return []",
+    "ground_truth_concepts": [
+      "loop progression",
+      "increment pointer",
+      "termination",
+      "infinite loop"
+    ],
+    "context_invariants": [
+      "i += 1 progress",
+      "bound check"
+    ]
+  }
+]
