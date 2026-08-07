@@ -1,0 +1,16 @@
+services:
+  runedact:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: runedact_app
+    ports:
+      - "8000:8000"
+    environment:
+      - LLM_PROVIDER=auto
+      - SANDBOX_TIMEOUT_SECONDS=2
+      - SANDBOX_MEMORY_LIMIT_MB=64
+      - SANDBOX_MAX_PROCESSES=1
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    restart: unless-stopped
