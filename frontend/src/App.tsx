@@ -67,7 +67,7 @@ export const App: React.FC = () => {
   }, [selectedProblemId]);
 
   const handleRunCode = async () => {
-    if (!selectedProblemId) return;
+    if (!selectedProblemId || isRunning) return;
     setIsRunning(true);
     try {
       const res = await fetch('/api/v1/run', {
@@ -79,8 +79,7 @@ export const App: React.FC = () => {
         })
       });
       if (res.ok) {
-        const data: RunCodeResponse = await res.json();
-        setExecutionResult(data);
+        setExecutionResult(await res.json());
       }
     } catch (err) {
       console.error('Failed to run code:', err);
@@ -98,8 +97,7 @@ export const App: React.FC = () => {
         body: JSON.stringify({ code })
       });
       if (res.ok) {
-        const data: ASTAnalysisResponse = await res.json();
-        setAstData(data);
+        setAstData(await res.json());
         setIsASTModalOpen(true);
       }
     } catch (err) {
@@ -137,17 +135,19 @@ export const App: React.FC = () => {
 
       if (res.ok) {
         const data = await res.json();
-        const assistantMsg: MentorMessage = {
-          id: `assistant-${Date.now()}`,
-          role: 'assistant',
-          content: data.content,
-          hintLevel: data.hint_level,
-          wasBlocked: data.leaked_solution,
-          latencyMs: data.latency_ms,
-          provider: data.provider,
-          timestamp: new Date().toLocaleTimeString()
-        };
-        setMessages((prev) => [...prev, assistantMsg]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `assistant-${Date.now()}`,
+            role: 'assistant',
+            content: data.content,
+            hintLevel: data.hint_level,
+            wasBlocked: data.leaked_solution,
+            latencyMs: data.latency_ms,
+            provider: data.provider,
+            timestamp: new Date().toLocaleTimeString()
+          }
+        ]);
       }
     } catch (err) {
       console.error('Failed to get hint:', err);
@@ -162,8 +162,20 @@ export const App: React.FC = () => {
     }
   };
 
+  // run shortcut anywhere, even with focus inside Monaco
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleRunCode();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
   return (
-    <div className="h-screen w-screen flex flex-col bg-slate-950 overflow-hidden font-sans">
+    <div className="flex h-screen w-screen flex-col overflow-hidden bg-zinc-950 font-sans text-zinc-200">
       <Navbar
         problems={problems}
         selectedProblemId={selectedProblemId}
@@ -175,27 +187,27 @@ export const App: React.FC = () => {
         isAnalyzing={isAnalyzingAST}
       />
 
-      <main className="flex-1 flex overflow-hidden">
-        <div className="w-1/4 h-full min-w-[320px]">
+      <main className="flex min-h-0 flex-1">
+        <aside className="h-full w-[300px] shrink-0 overflow-hidden border-r border-zinc-800/80">
           <ProblemPane problem={currentProblem} loading={loadingProblem} />
-        </div>
+        </aside>
 
-        <div className="flex-1 h-full flex flex-col border-r border-slate-800 min-w-[400px]">
-          <div className="h-[62%] w-full">
+        <section className="flex min-w-0 flex-1 flex-col">
+          <div className="min-h-0 flex-[62]">
             <CodeEditorPane code={code} onChange={setCode} onReset={handleResetCode} />
           </div>
-          <div className="h-[38%] w-full">
+          <div className="min-h-0 flex-[38]">
             <ExecutionPane result={executionResult} isRunning={isRunning} />
           </div>
-        </div>
+        </section>
 
-        <div className="w-[30%] h-full min-w-[340px]">
+        <aside className="h-full w-[320px] shrink-0 overflow-hidden border-l border-zinc-800/80">
           <AIMentorPane
             messages={messages}
             onRequestHint={handleRequestHint}
             isLoading={isMentorLoading}
           />
-        </div>
+        </aside>
       </main>
 
       <ASTInsightsModal
@@ -203,7 +215,6 @@ export const App: React.FC = () => {
         onClose={() => setIsASTModalOpen(false)}
         astData={astData}
       />
-
       <EvalDashboardModal
         isOpen={isEvalModalOpen}
         onClose={() => setIsEvalModalOpen(false)}
