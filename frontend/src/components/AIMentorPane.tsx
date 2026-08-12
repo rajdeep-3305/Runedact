@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import type { MentorMessage } from '../types';
-import { Clock, Lightbulb, Send, ShieldCheck, Sparkles } from 'lucide-react';
 
 interface AIMentorPaneProps {
   messages: MentorMessage[];
@@ -9,125 +8,138 @@ interface AIMentorPaneProps {
 }
 
 const HINT_LEVELS = [
-  { level: 1, label: 'L1: Concept' },
-  { level: 2, label: 'L2: Algorithm' },
-  { level: 3, label: 'L3: Targeted' }
+  { level: 1, label: 'concept' },
+  { level: 2, label: 'approach' },
+  { level: 3, label: 'targeted' }
 ];
+
+const SUGGESTIONS = ['why does a hidden case fail?', 'how do i make this faster?', "i'm stuck, where do i start?"];
 
 export const AIMentorPane: React.FC<AIMentorPaneProps> = ({ messages, onRequestHint, isLoading }) => {
   const [activeHintLevel, setActiveHintLevel] = useState<number>(1);
   const [userQuery, setUserQuery] = useState<string>('');
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onRequestHint(activeHintLevel, userQuery);
+  const send = (query: string) => {
+    onRequestHint(activeHintLevel, query);
     setUserQuery('');
   };
 
-  return (
-    <div className="h-full flex flex-col bg-slate-900 overflow-hidden">
-      <div className="p-3.5 border-b border-slate-800">
-        <div className="flex items-center justify-between mb-2.5">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-md bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
-              <Sparkles className="w-3.5 h-3.5" />
-            </div>
-            <span className="text-xs font-bold text-white tracking-tight">AI Mentor</span>
-          </div>
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    send(userQuery);
+  };
 
-          <div className="flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-            <ShieldCheck className="w-3 h-3" />
-            <span>Guard</span>
+  return (
+    <div className="flex h-full flex-col overflow-hidden bg-zinc-950">
+      {/* header */}
+      <div className="border-b border-zinc-800/80 p-3">
+        <div className="mb-2.5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="grid h-5 w-5 place-items-center rounded border border-amber-400/30 bg-amber-400/10 font-mono text-[11px] text-amber-300">
+              ᚱ
+            </span>
+            <span className="text-xs font-semibold text-zinc-200">mentor</span>
           </div>
+          <span className="font-mono text-[10px] text-zinc-600">
+            {messages.length === 0 ? 'no messages' : `${messages.length} messages`}
+          </span>
         </div>
 
-        <div className="grid grid-cols-3 gap-1 bg-slate-900/90 p-1 rounded-lg border border-slate-800">
+        {/* hint levels */}
+        <div className="grid grid-cols-3 gap-1 rounded-md border border-zinc-800 bg-zinc-900/50 p-1">
           {HINT_LEVELS.map((h) => (
             <button
               key={h.level}
               type="button"
               onClick={() => setActiveHintLevel(h.level)}
-              className={`py-1 px-1.5 rounded text-[11px] font-semibold transition cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 rounded py-1 font-mono text-[10px] transition cursor-pointer ${
                 activeHintLevel === h.level
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  ? 'bg-amber-400/15 text-amber-300'
+                  : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
+              <span className={activeHintLevel === h.level ? 'text-amber-400' : 'text-zinc-600'}>
+                {h.level}
+              </span>
               {h.label}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="flex-1 p-3.5 overflow-y-auto space-y-3.5 text-xs">
-        {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center p-4 text-slate-500 space-y-2">
-            <Lightbulb className="w-6 h-6 text-amber-400/60" />
-            <p className="text-slate-400 font-medium">No guidance requested yet.</p>
-            <p className="text-[11px] text-slate-500 max-w-xs">Stuck? Ask for a hint.</p>
-            <button
-              onClick={() => onRequestHint(activeHintLevel, 'I am stuck. Where should I begin?')}
-              disabled={isLoading}
-              className="mt-2 text-xs font-semibold px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition cursor-pointer"
-            >
-              Ask for a hint
-            </button>
+      {/* messages */}
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3.5 text-xs">
+        {messages.length === 0 && !isLoading ? (
+          <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+            <span className="font-mono text-2xl text-zinc-800">ᚱ</span>
+            <p className="max-w-[220px] text-[11px] leading-relaxed text-zinc-600">
+              hints, not answers. pick a level and ask — or send an empty message for a nudge.
+            </p>
+            <div className="flex flex-col gap-1.5">
+              {SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => send(s)}
+                  className="rounded-md border border-zinc-800 px-2.5 py-1 font-mono text-[10px] text-zinc-400 transition hover:border-zinc-700 hover:text-zinc-200 cursor-pointer"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
           messages.map((m) => {
             const isUser = m.role === 'user';
-            return (
-              <div key={m.id} className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} space-y-1`}>
-                <div
-                  className={`max-w-[90%] rounded-xl p-3 text-xs leading-relaxed ${
-                    isUser
-                      ? 'bg-indigo-600 text-white rounded-tr-none'
-                      : 'bg-slate-800/90 text-slate-200 border border-slate-700/70 rounded-tl-none shadow-sm'
-                  }`}
-                >
-                  <p className="whitespace-pre-wrap">{m.content}</p>
+            return isUser ? (
+              <div key={m.id} className="flex justify-end">
+                <div className="max-w-[85%] rounded-lg rounded-br-sm border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-[12px] leading-relaxed text-amber-100/90">
+                  {m.content}
                 </div>
-
-                {!isUser && (
-                  <div className="flex items-center gap-2 text-[10px] text-slate-500 font-mono px-1">
-                    {m.hintLevel && <span>Level {m.hintLevel}</span>}
-                    {m.wasBlocked && <span className="text-amber-400">guarded</span>}
-                    {m.latencyMs !== undefined && (
-                      <span className="flex items-center gap-0.5">
-                        <Clock className="w-2.5 h-2.5" />
-                        {m.latencyMs}ms
-                      </span>
-                    )}
-                    {m.provider && <span className="text-slate-600">({m.provider})</span>}
-                  </div>
-                )}
+              </div>
+            ) : (
+              <div key={m.id} className="border-l-2 border-zinc-800 pl-3">
+                <p className="whitespace-pre-wrap text-[12px] leading-relaxed text-zinc-300">
+                  {m.content}
+                </p>
+                <div className="mt-1.5 flex items-center gap-2 font-mono text-[9px] text-zinc-600">
+                  <span>level {m.hintLevel}</span>
+                  {m.wasBlocked && <span className="text-amber-500">· guarded</span>}
+                  {m.latencyMs !== undefined && <span>· {m.latencyMs}ms</span>}
+                  {m.provider && <span className="text-zinc-700">· {m.provider}</span>}
+                </div>
               </div>
             );
           })
         )}
 
         {isLoading && (
-          <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
-            <div className="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-            <span>Thinking...</span>
+          <div className="flex items-center gap-1.5 font-mono text-[10px] text-zinc-500">
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-amber-400/80 [animation-delay:0ms]" />
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-amber-400/80 [animation-delay:120ms]" />
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-amber-400/80 [animation-delay:240ms]" />
+            reading your code…
           </div>
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="p-3 border-t border-slate-800 flex gap-2">
+      {/* input */}
+      <form onSubmit={handleSubmit} className="flex gap-2 border-t border-zinc-800/80 p-2.5">
         <input
           type="text"
           value={userQuery}
           onChange={(e) => setUserQuery(e.target.value)}
-          placeholder={`Ask the mentor, or leave blank for a level ${activeHintLevel} hint...`}
-          className="flex-1 bg-slate-800 text-slate-200 text-xs rounded-lg px-3 py-2 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          placeholder="ask, or send empty for a nudge…"
+          className="min-w-0 flex-1 rounded-md border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-xs text-zinc-200 outline-none transition placeholder:text-zinc-600 focus:border-amber-400/40"
         />
         <button
           type="submit"
           disabled={isLoading}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg font-medium transition disabled:opacity-50 flex items-center justify-center cursor-pointer"
+          className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-md bg-amber-400 text-zinc-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+          title="Send"
         >
-          <Send className="w-3.5 h-3.5" />
+          <svg className="h-3.5 w-3.5" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7h9M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </button>
       </form>
     </div>
