@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { RunCodeResponse } from '../types';
-import { AlertTriangle, CheckCircle2, Clock, Cpu, Terminal, XCircle } from 'lucide-react';
+import { runKeyLabel } from '../lib/keys';
 
 interface ExecutionPaneProps {
   result: RunCodeResponse | null;
@@ -9,97 +9,111 @@ interface ExecutionPaneProps {
 
 export const ExecutionPane: React.FC<ExecutionPaneProps> = ({ result, isRunning }) => {
   const [selectedTab, setSelectedTab] = useState<number>(0);
+  const [seenResult, setSeenResult] = useState<RunCodeResponse | null>(null);
+
+  // adjust state during render: snap to the first failing case on each new run
+  if (result !== seenResult && result) {
+    setSeenResult(result);
+    const firstFail = result.test_results.findIndex((tc) => !tc.passed);
+    setSelectedTab(firstFail >= 0 ? firstFail : 0);
+  }
 
   if (isRunning) {
     return (
-      <div className="h-full flex flex-col items-center justify-center bg-slate-900/60 p-6 text-slate-400 text-xs gap-3">
-        <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-        <p className="font-mono">Running...</p>
+      <div className="flex h-full items-center justify-center gap-3 bg-zinc-950">
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-amber-400/80 border-t-transparent" />
+        <span className="font-mono text-xs text-zinc-500">running in sandbox…</span>
       </div>
     );
   }
 
   if (!result) {
     return (
-      <div className="h-full flex flex-col items-center justify-center bg-slate-900/40 p-6 text-slate-500 text-xs gap-2">
-        <Terminal className="w-5 h-5 opacity-40" />
-        <p>Run your code to see sandbox output and test results.</p>
+      <div className="flex h-full flex-col items-center justify-center gap-2 bg-zinc-950 text-zinc-600">
+        <span className="font-mono text-[11px]">$ waiting for a run</span>
+        <span className="text-xs text-zinc-700">
+          press <span className="kbd">{runKeyLabel}</span> or hit run
+        </span>
       </div>
     );
   }
 
-  const statusConfig = {
-    accepted: { text: 'Accepted', color: 'text-emerald-400', icon: CheckCircle2 },
-    wrong_answer: { text: 'Wrong Answer', color: 'text-rose-400', icon: XCircle },
-    time_limit_exceeded: { text: 'Time Limit Exceeded', color: 'text-amber-400', icon: Clock },
-    memory_limit_exceeded: { text: 'Memory Limit Exceeded', color: 'text-purple-400', icon: AlertTriangle },
-    runtime_error: { text: 'Runtime Error', color: 'text-rose-400', icon: AlertTriangle },
-    compilation_error: { text: 'Syntax Error', color: 'text-rose-400', icon: AlertTriangle },
-    error: { text: 'Execution Error', color: 'text-rose-400', icon: AlertTriangle }
-  }[result.status] || { text: result.status, color: 'text-slate-300', icon: Terminal };
+  const summary = result.passed_count === result.total_count
+    ? `ok · ${result.passed_count}/${result.total_count}`
+    : result.passed_count === 0
+      ? `failed · 0/${result.total_count}`
+      : `partial · ${result.passed_count}/${result.total_count}`;
+  const summaryTone = result.passed_count === result.total_count
+    ? 'text-emerald-400'
+    : 'text-amber-400';
 
-  const StatusIcon = statusConfig.icon;
+  const statusText: Record<string, string> = {
+    accepted: 'accepted',
+    wrong_answer: 'wrong answer',
+    time_limit_exceeded: 'time limit exceeded',
+    memory_limit_exceeded: 'memory limit exceeded',
+    runtime_error: 'runtime error',
+    compilation_error: 'syntax error',
+    error: 'sandbox error'
+  };
+
   const activeTest = result.test_results[selectedTab];
 
   return (
-    <div className="h-full flex flex-col bg-slate-900 border-t border-slate-800 overflow-hidden text-xs">
-      <div className="h-10 px-4 border-b border-slate-800 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <StatusIcon className={`w-4 h-4 ${statusConfig.color}`} />
-          <span className={`font-bold ${statusConfig.color}`}>{statusConfig.text}</span>
-          <span className="text-slate-500 text-[11px] font-mono">
-            ({result.passed_count}/{result.total_count} tests passed)
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3 text-slate-400 font-mono text-[11px]">
-          <div className="flex items-center gap-1">
-            <Clock className="w-3 h-3 text-slate-500" />
-            <span>{result.execution_time_ms} ms</span>
-          </div>
-          <Cpu className="w-3 h-3 text-slate-500" />
-        </div>
+    <div className="flex h-full flex-col overflow-hidden border-t border-zinc-800/80 bg-zinc-950 text-xs">
+      {/* test tab strip */}
+      <div className="flex h-9 shrink-0 items-center gap-1 border-b border-zinc-800/80 px-3">
+        <span className="mr-2 font-mono text-[10px] uppercase tracking-widest text-zinc-600">
+          tests
+        </span>
+        {result.test_results.map((tc, idx) => (
+          <button
+            key={idx}
+            onClick={() => setSelectedTab(idx)}
+            className={`flex items-center gap-1.5 rounded px-2 py-1 font-mono text-[11px] transition cursor-pointer ${
+              selectedTab === idx
+                ? 'bg-zinc-800 text-zinc-100'
+                : 'text-zinc-500 hover:bg-zinc-900 hover:text-zinc-300'
+            }`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${tc.passed ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+            case {idx + 1}
+            {tc.hidden && <span className="text-[9px] text-zinc-600">hidden</span>}
+          </button>
+        ))}
       </div>
 
-      <div className="flex-1 p-3 overflow-y-auto space-y-3 font-mono">
-        {result.test_results.length > 0 && (
-          <div className="flex items-center gap-1.5 border-b border-slate-800 pb-2">
-            {result.test_results.map((tc, idx) => (
-              <button
-                key={idx}
-                onClick={() => setSelectedTab(idx)}
-                className={`px-2.5 py-1 rounded text-[11px] font-medium transition cursor-pointer flex items-center gap-1.5 ${
-                  selectedTab === idx
-                    ? 'bg-slate-700 text-white border border-slate-600'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-                }`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${tc.passed ? 'bg-emerald-400' : 'bg-rose-400'}`} />
-                <span>Case {idx + 1}</span>
-                {tc.hidden && <span className="text-[9px] text-slate-500">(hidden)</span>}
-              </button>
-            ))}
+      {/* body */}
+      <div className="min-h-0 flex-1 overflow-y-auto p-3">
+        {result.status !== 'accepted' && result.status !== 'wrong_answer' && (
+          <div className="mb-3 rounded-md border border-rose-500/25 bg-rose-500/[0.07] px-3 py-2 font-mono text-[11px] text-rose-300">
+            {statusText[result.status] ?? result.status}
           </div>
         )}
 
         {activeTest && (
-          <div className="space-y-2 text-[11px]">
+          <div className="space-y-2">
             {activeTest.error ? (
-              <div className="p-2.5 rounded bg-rose-500/10 border border-rose-500/20 text-rose-300">
-                <span className="font-semibold">Error: </span>
+              <pre className="rounded-md border border-rose-500/20 bg-rose-500/[0.06] p-3 font-mono text-[11px] leading-relaxed text-rose-300/90">
                 {activeTest.error}
-              </div>
+              </pre>
             ) : (
               <div className="grid grid-cols-2 gap-2">
-                <div className="p-2.5 rounded bg-slate-800 border border-slate-700">
-                  <div className="text-slate-500 text-[10px] mb-1 uppercase font-semibold">Your Output</div>
-                  <div className={activeTest.passed ? 'text-emerald-300' : 'text-rose-300'}>
+                <div className="rounded-md border border-zinc-800/80 bg-zinc-900/40 p-2.5">
+                  <div className="mb-1 font-mono text-[9px] uppercase tracking-widest text-zinc-600">
+                    yours
+                  </div>
+                  <div className={`font-mono text-[11px] ${activeTest.passed ? 'text-emerald-400/90' : 'text-rose-300'}`}>
                     {JSON.stringify(activeTest.got)}
                   </div>
                 </div>
-                <div className="p-2.5 rounded bg-slate-800 border border-slate-700">
-                  <div className="text-slate-500 text-[10px] mb-1 uppercase font-semibold">Expected Output</div>
-                  <div className="text-cyan-300">{JSON.stringify(activeTest.expected)}</div>
+                <div className="rounded-md border border-zinc-800/80 bg-zinc-900/40 p-2.5">
+                  <div className="mb-1 font-mono text-[9px] uppercase tracking-widest text-zinc-600">
+                    expected
+                  </div>
+                  <div className="font-mono text-[11px] text-zinc-300">
+                    {JSON.stringify(activeTest.expected)}
+                  </div>
                 </div>
               </div>
             )}
@@ -107,18 +121,35 @@ export const ExecutionPane: React.FC<ExecutionPaneProps> = ({ result, isRunning 
         )}
 
         {result.stderr && (
-          <div className="p-2.5 rounded bg-slate-950 border border-rose-500/20 text-rose-300/90 text-[11px] whitespace-pre-wrap">
-            <span className="font-semibold text-rose-400">Stderr / Traceback:</span>
-            <div className="mt-1">{result.stderr}</div>
+          <div className="mt-3">
+            <div className="mb-1 font-mono text-[9px] uppercase tracking-widest text-zinc-600">
+              stderr
+            </div>
+            <pre className="rounded-md border border-zinc-800/80 bg-black/50 p-3 font-mono text-[11px] leading-relaxed text-rose-300/80">
+              {result.stderr}
+            </pre>
           </div>
         )}
 
         {result.stdout && (
-          <div className="p-2.5 rounded bg-slate-950 border border-slate-800 text-slate-300 text-[11px] whitespace-pre-wrap">
-            <span className="font-semibold text-slate-400">Stdout:</span>
-            <div className="mt-1">{result.stdout}</div>
+          <div className="mt-3">
+            <div className="mb-1 font-mono text-[9px] uppercase tracking-widest text-zinc-600">
+              stdout
+            </div>
+            <pre className="rounded-md border border-zinc-800/80 bg-black/50 p-3 font-mono text-[11px] leading-relaxed text-zinc-400">
+              {result.stdout}
+            </pre>
           </div>
         )}
+      </div>
+
+      {/* status bar */}
+      <div className="flex h-7 shrink-0 items-center justify-between border-t border-zinc-800/80 bg-zinc-900/50 px-3 font-mono text-[10px]">
+        <span className={summaryTone}>● {summary}</span>
+        <div className="flex items-center gap-3 text-zinc-500">
+          <span>{result.execution_time_ms} ms</span>
+          <span>exit {result.exit_code}</span>
+        </div>
       </div>
     </div>
   );

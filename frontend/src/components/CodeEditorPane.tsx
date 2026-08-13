@@ -1,6 +1,6 @@
 import React from 'react';
 import Editor from '@monaco-editor/react';
-import { Code2, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 
 interface CodeEditorPaneProps {
   code: string;
@@ -10,25 +10,30 @@ interface CodeEditorPaneProps {
 
 export const CodeEditorPane: React.FC<CodeEditorPaneProps> = ({ code, onChange, onReset }) => {
   return (
-    <div className="h-full flex flex-col bg-slate-950 border-r border-slate-800">
-      <div className="h-9 px-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs">
-        <div className="flex items-center gap-2 text-slate-300 font-medium">
-          <Code2 className="w-3.5 h-3.5 text-indigo-400" />
-          <span>solution.py</span>
-          <span className="text-[10px] text-slate-500 font-mono">(Python 3)</span>
+    <div className="flex h-full flex-col bg-[#141417]">
+      {/* tab strip */}
+      <div className="flex h-8 shrink-0 items-center border-b border-zinc-800/80 bg-zinc-900/60 pr-2">
+        <div className="flex items-center gap-1.5 self-stretch border-r border-zinc-800/80 bg-[#141417] pl-3 pr-3">
+          <span className="h-2 w-2 rounded-full bg-amber-400/70" />
+          <span className="font-mono text-[11px] text-zinc-300">solution.py</span>
+          <span className="h-1.5 w-1.5 rounded-full bg-zinc-600" title="unsaved changes" />
         </div>
 
-        <button
-          onClick={onReset}
-          className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-slate-200 transition cursor-pointer"
-          title="Reset to starter code"
-        >
-          <RotateCcw className="w-3 h-3" />
-          <span>Reset</span>
-        </button>
+        <div className="ml-auto flex items-center gap-3 font-mono text-[10px] text-zinc-600">
+          <span>python 3.11 · utf-8 · spaces: 4</span>
+          <button
+            onClick={onReset}
+            className="flex items-center gap-1 rounded px-1.5 py-0.5 text-zinc-500 transition hover:bg-zinc-800 hover:text-zinc-300 cursor-pointer"
+            title="Reset to starter code"
+          >
+            <RotateCcw className="h-3 w-3" />
+            reset
+          </button>
+        </div>
       </div>
 
-      <div className="flex-1 w-full overflow-hidden">
+      {/* editor body */}
+      <div className="min-h-0 flex-1">
         <Editor
           height="100%"
           language="python"
@@ -37,14 +42,25 @@ export const CodeEditorPane: React.FC<CodeEditorPaneProps> = ({ code, onChange, 
           onChange={(val) => onChange(val || '')}
           options={{
             minimap: { enabled: false },
-            fontSize: 13,
-            lineNumbers: 'on',
+            fontSize: 13.5,
+            lineHeight: 21,
+            fontFamily:
+              "'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace",
+            fontLigatures: true,
             scrollBeyondLastLine: false,
             automaticLayout: true,
             tabSize: 4,
-            padding: { top: 12, bottom: 12 },
-            fontFamily: "'Fira Code', 'JetBrains Mono', Menlo, Consolas, monospace",
-            fontLigatures: true
+            insertSpaces: true,
+            cursorBlinking: 'phase',
+            cursorSmoothCaretAnimation: 'on',
+            smoothScrolling: true,
+            padding: { top: 14, bottom: 14 },
+            renderLineHighlight: 'none',
+            overviewRulerLanes: 0,
+            hideCursorInOverviewRuler: true,
+            scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 },
+            quickSuggestions: false,
+            suggestOnTriggerCharacters: false
           }}
         />
       </div>
