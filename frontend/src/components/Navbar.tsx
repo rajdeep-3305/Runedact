@@ -1,6 +1,6 @@
 import React from 'react';
-import { BarChart2, Cpu, Play } from 'lucide-react';
 import type { ProblemSummary } from '../types';
+import { runKeyLabel } from '../lib/keys';
 
 interface NavbarProps {
   problems: ProblemSummary[];
@@ -23,57 +23,77 @@ export const Navbar: React.FC<NavbarProps> = ({
   onTriggerAST,
   isAnalyzing
 }) => {
+  const selected = problems.find((p) => p.id === selectedProblemId);
+
   return (
-    <header className="h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between select-none">
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-cyan-400 flex items-center justify-center font-bold text-white shadow-md shadow-indigo-500/20">
-            Σ
-          </div>
-          <span className="font-semibold text-white tracking-tight text-sm">Runedact</span>
-        </div>
+    <header className="h-12 shrink-0 border-b border-zinc-800/80 bg-zinc-950 px-3 flex items-center gap-4 select-none">
+      {/* brand */}
+      <div className="flex items-center gap-2.5 pr-1">
+        <span className="grid h-7 w-7 place-items-center rounded bg-amber-400 font-mono text-base font-bold text-zinc-950">
+          ᚱ
+        </span>
+        <span className="font-sans text-[15px] font-semibold tracking-tight text-zinc-100">
+          runedact
+        </span>
+      </div>
 
-        <div className="h-5 w-px bg-slate-800 mx-1" />
+      <div className="h-5 w-px bg-zinc-800" />
 
+      {/* problem picker: title + difficulty left, dropdown affordance right */}
+      <div className="relative flex min-w-0 max-w-[340px] flex-1 items-center rounded-md border border-zinc-800 bg-zinc-900/60 hover:border-zinc-700">
+        <span className="pointer-events-none absolute left-2.5 font-mono text-[11px] text-zinc-500">
+          {selected ? selected.difficulty.toLowerCase() : 'problem'}
+        </span>
         <select
           value={selectedProblemId}
           onChange={(e) => onSelectProblem(e.target.value)}
-          className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg px-3 py-1.5 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+          className="w-full cursor-pointer appearance-none truncate bg-transparent py-1.5 pl-[74px] pr-7 text-xs text-zinc-200 outline-none"
         >
           {problems.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.title} ({p.difficulty})
+            <option key={p.id} value={p.id} className="bg-zinc-900">
+              {p.title}
             </option>
           ))}
         </select>
+        <svg
+          className="pointer-events-none absolute right-2 h-3 w-3 text-zinc-500"
+          viewBox="0 0 12 12"
+          fill="none"
+        >
+          <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        </svg>
       </div>
 
-      <div className="flex items-center gap-2.5">
+      <div className="ml-auto flex items-center gap-2">
         <button
           onClick={onTriggerAST}
           disabled={isAnalyzing}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition disabled:opacity-50 cursor-pointer"
-          title="Analyze Code"
+          className="rounded-md px-2.5 py-1.5 font-mono text-[11px] text-zinc-400 transition hover:bg-zinc-800/70 hover:text-zinc-200 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
         >
-          <Cpu className="w-3.5 h-3.5 text-cyan-400" />
-          <span>{isAnalyzing ? 'Analyzing...' : 'Analyze Code'}</span>
+          {isAnalyzing ? 'reading ast…' : 'insights'}
         </button>
 
         <button
           onClick={onOpenEvals}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 rounded-lg border border-amber-500/30 transition cursor-pointer"
+          className="rounded-md px-2.5 py-1.5 font-mono text-[11px] text-zinc-400 transition hover:bg-zinc-800/70 hover:text-zinc-200 cursor-pointer"
         >
-          <BarChart2 className="w-3.5 h-3.5 text-amber-400" />
-          <span>Benchmarks</span>
+          benchmarks
         </button>
 
         <button
           onClick={onRunCode}
           disabled={isRunning}
-          className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg shadow-sm shadow-emerald-700/30 transition disabled:opacity-50 cursor-pointer"
+          className="flex items-center gap-2 rounded-md bg-amber-400 px-3 py-1.5 text-xs font-semibold text-zinc-950 transition hover:bg-amber-300 active:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
         >
-          <Play className={`w-3.5 h-3.5 fill-current ${isRunning ? 'animate-pulse' : ''}`} />
-          <span>{isRunning ? 'Running...' : 'Run Code'}</span>
+          {isRunning ? (
+            <span className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-zinc-900/30 border-t-zinc-900" />
+          ) : (
+            <svg className="h-3 w-3" viewBox="0 0 12 12" fill="currentColor">
+              <path d="M2.5 1.5v9l8-4.5-8-4.5z" />
+            </svg>
+          )}
+          run
+          <span className="kbd border-zinc-900/40 bg-zinc-900/10 text-zinc-900">{runKeyLabel}</span>
         </button>
       </div>
     </header>
