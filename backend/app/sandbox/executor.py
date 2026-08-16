@@ -99,6 +99,13 @@ class CodeSandbox:
             except json.JSONDecodeError:
                 return self._error("runtime_error", stderr, proc.returncode, duration_ms)
 
+            # hidden cases keep their verdict but never their values, or the
+            # response would leak the expected outputs to the student
+            for tc in test_results:
+                if tc.get("hidden"):
+                    tc.pop("got", None)
+                    tc.pop("expected", None)
+
             if any("MemoryError" in str(tc.get("error", "")) for tc in test_results):
                 return self._error(
                     "memory_limit_exceeded",

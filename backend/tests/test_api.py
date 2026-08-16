@@ -67,3 +67,30 @@ def test_mentor_hint():
     assert data["hint_level"] == 1
     assert len(data["content"]) > 10
     assert data["leaked_solution"] is False
+
+
+def test_hidden_cases_do_not_leak_expected_outputs():
+    code = """
+def two_sum(nums: list[int], target: int) -> list[int]:
+    return []
+"""
+    response = client.post("/api/v1/run", json={"problem_id": "two-sum", "code": code})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "wrong_answer"
+
+    # hidden cases keep their verdict but their values come back null
+    for tc in data["test_results"]:
+        if tc["hidden"]:
+            assert tc["got"] is None
+            assert tc["expected"] is None
+        else:
+            assert tc["expected"] is not None
+
+
+def test_run_rejects_oversized_code():
+    response = client.post(
+        "/api/v1/run",
+        json={"problem_id": "two-sum", "code": "x = 1\n" + "#" + "a" * 70_000},
+    )
+    assert response.status_code == 422

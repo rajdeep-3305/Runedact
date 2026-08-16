@@ -23,7 +23,7 @@ class ProblemDetail(BaseModel):
 
 class RunCodeRequest(BaseModel):
     problem_id: str
-    code: str
+    code: str = Field(max_length=65_536)
 
 
 class TestCaseResult(BaseModel):
@@ -64,7 +64,7 @@ class ASTAnalysisResponse(BaseModel):
 
 class MentorHintRequest(BaseModel):
     problem_id: str
-    code: str
+    code: str = Field(max_length=65_536)
     hint_level: int = Field(default=1, ge=1, le=3)
     user_query: Optional[str] = ""
 
