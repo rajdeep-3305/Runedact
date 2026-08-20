@@ -17,6 +17,8 @@ export const App: React.FC = () => {
 
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [executionResult, setExecutionResult] = useState<RunCodeResponse | null>(null);
+  const [runError, setRunError] = useState<string | null>(null);
+  const [hintError, setHintError] = useState<string | null>(null);
   const [astData, setAstData] = useState<ASTAnalysisResponse | null>(null);
   const [isAnalyzingAST, setIsAnalyzingAST] = useState<boolean>(false);
   const [isASTModalOpen, setIsASTModalOpen] = useState<boolean>(false);
@@ -55,6 +57,9 @@ export const App: React.FC = () => {
           setCurrentProblem(data);
           setCode(data.starter_code['python'] || '');
           setExecutionResult(null);
+          setRunError(null);
+          setHintError(null);
+          setAstData(null);
           setMessages([]);
         }
       } catch (err) {
@@ -69,6 +74,7 @@ export const App: React.FC = () => {
   const handleRunCode = async () => {
     if (!selectedProblemId || isRunning) return;
     setIsRunning(true);
+    setRunError(null);
     try {
       const res = await fetch('/api/v1/run', {
         method: 'POST',
@@ -80,9 +86,22 @@ export const App: React.FC = () => {
       });
       if (res.ok) {
         setExecutionResult(await res.json());
+        // refresh the insights quietly so the complexity chip stays current
+        fetch('/api/v1/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code })
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .then(setAstData)
+          .catch(() => {});
+      } else if (res.status === 422) {
+        setRunError('code is too large to run (64KB limit)');
+      } else {
+        setRunError(`run failed (${res.status})`);
       }
-    } catch (err) {
-      console.error('Failed to run code:', err);
+    } catch {
+      setRunError('could not reach the server — is the backend running?');
     } finally {
       setIsRunning(false);
     }
@@ -121,6 +140,7 @@ export const App: React.FC = () => {
     }
 
     setIsMentorLoading(true);
+    setHintError(null);
     try {
       const res = await fetch('/api/v1/mentor/hint', {
         method: 'POST',
@@ -148,9 +168,13 @@ export const App: React.FC = () => {
             timestamp: new Date().toLocaleTimeString()
           }
         ]);
+      } else if (res.status === 422) {
+        setHintError('your code is too large to send (64KB limit)');
+      } else {
+        setHintError(`hint request failed (${res.status})`);
       }
-    } catch (err) {
-      console.error('Failed to get hint:', err);
+    } catch {
+      setHintError('could not reach the server — is the backend running?');
     } finally {
       setIsMentorLoading(false);
     }
@@ -194,10 +218,16 @@ export const App: React.FC = () => {
 
         <section className="flex min-w-0 flex-1 flex-col">
           <div className="min-h-0 flex-[62]">
-            <CodeEditorPane code={code} onChange={setCode} onReset={handleResetCode} />
+            <CodeEditorPane
+              code={code}
+              onChange={setCode}
+              onReset={handleResetCode}
+              insights={astData}
+              onOpenInsights={() => setIsASTModalOpen(true)}
+            />
           </div>
           <div className="min-h-0 flex-[38]">
-            <ExecutionPane result={executionResult} isRunning={isRunning} />
+            <ExecutionPane result={executionResult} isRunning={isRunning} error={runError} />
           </div>
         </section>
 
@@ -206,6 +236,7 @@ export const App: React.FC = () => {
             messages={messages}
             onRequestHint={handleRequestHint}
             isLoading={isMentorLoading}
+            error={hintError}
           />
         </aside>
       </main>

@@ -5,6 +5,7 @@ interface AIMentorPaneProps {
   messages: MentorMessage[];
   onRequestHint: (hintLevel: number, userQuery: string) => void;
   isLoading: boolean;
+  error: string | null;
 }
 
 const HINT_LEVELS = [
@@ -15,7 +16,7 @@ const HINT_LEVELS = [
 
 const SUGGESTIONS = ['why does a hidden case fail?', 'how do i make this faster?', "i'm stuck, where do i start?"];
 
-export const AIMentorPane: React.FC<AIMentorPaneProps> = ({ messages, onRequestHint, isLoading }) => {
+export const AIMentorPane: React.FC<AIMentorPaneProps> = ({ messages, onRequestHint, isLoading, error }) => {
   const [activeHintLevel, setActiveHintLevel] = useState<number>(1);
   const [userQuery, setUserQuery] = useState<string>('');
 
@@ -123,6 +124,13 @@ export const AIMentorPane: React.FC<AIMentorPaneProps> = ({ messages, onRequestH
       </div>
 
       {/* input */}
+      {error && (
+        <div className="border-t border-zinc-800/80 px-3 pt-2">
+          <div className="rounded-md border border-rose-500/25 bg-rose-500/[0.07] px-2.5 py-1.5 font-mono text-[10px] leading-relaxed text-rose-300">
+            {error}
+          </div>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="flex gap-2 border-t border-zinc-800/80 p-2.5">
         <input
           type="text"
