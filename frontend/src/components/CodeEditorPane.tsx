@@ -1,14 +1,23 @@
 import React from 'react';
 import Editor from '@monaco-editor/react';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, ScanSearch } from 'lucide-react';
+import type { ASTAnalysisResponse } from '../types';
 
 interface CodeEditorPaneProps {
   code: string;
   onChange: (value: string) => void;
   onReset: () => void;
+  insights: ASTAnalysisResponse | null;
+  onOpenInsights: () => void;
 }
 
-export const CodeEditorPane: React.FC<CodeEditorPaneProps> = ({ code, onChange, onReset }) => {
+export const CodeEditorPane: React.FC<CodeEditorPaneProps> = ({
+  code,
+  onChange,
+  onReset,
+  insights,
+  onOpenInsights
+}) => {
   return (
     <div className="flex h-full flex-col bg-[#141417]">
       {/* tab strip */}
@@ -20,6 +29,21 @@ export const CodeEditorPane: React.FC<CodeEditorPaneProps> = ({ code, onChange, 
         </div>
 
         <div className="ml-auto flex items-center gap-3 font-mono text-[10px] text-zinc-600">
+          {insights?.syntax_valid && (
+            <button
+              onClick={onOpenInsights}
+              title="AST insights"
+              className="flex items-center gap-1.5 rounded px-1.5 py-0.5 transition hover:bg-zinc-800 hover:text-amber-300 cursor-pointer"
+            >
+              <ScanSearch className="h-3 w-3" />
+              {insights.estimated_complexity}
+              <span className="text-zinc-700">·</span>
+              depth {insights.max_loop_depth}
+              {insights.anti_patterns.length > 0 && (
+                <span className="text-amber-500/80">· {insights.anti_patterns.length} smell{insights.anti_patterns.length > 1 ? 's' : ''}</span>
+              )}
+            </button>
+          )}
           <span>python 3.11 · utf-8 · spaces: 4</span>
           <button
             onClick={onReset}

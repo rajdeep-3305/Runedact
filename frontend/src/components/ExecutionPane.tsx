@@ -5,9 +5,10 @@ import { runKeyLabel } from '../lib/keys';
 interface ExecutionPaneProps {
   result: RunCodeResponse | null;
   isRunning: boolean;
+  error: string | null;
 }
 
-export const ExecutionPane: React.FC<ExecutionPaneProps> = ({ result, isRunning }) => {
+export const ExecutionPane: React.FC<ExecutionPaneProps> = ({ result, isRunning, error }) => {
   const [selectedTab, setSelectedTab] = useState<number>(0);
   const [seenResult, setSeenResult] = useState<RunCodeResponse | null>(null);
 
@@ -28,6 +29,15 @@ export const ExecutionPane: React.FC<ExecutionPaneProps> = ({ result, isRunning 
   }
 
   if (!result) {
+    if (error) {
+      return (
+        <div className="flex h-full items-center justify-center bg-zinc-950 px-6">
+          <div className="rounded-md border border-rose-500/25 bg-rose-500/[0.07] px-3 py-2 font-mono text-[11px] text-rose-300">
+            {error}
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 bg-zinc-950 text-zinc-600">
         <span className="font-mono text-[11px]">$ waiting for a run</span>
@@ -85,6 +95,11 @@ export const ExecutionPane: React.FC<ExecutionPaneProps> = ({ result, isRunning 
 
       {/* body */}
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
+        {error && (
+          <div className="mb-3 rounded-md border border-rose-500/25 bg-rose-500/[0.07] px-3 py-2 font-mono text-[11px] text-rose-300">
+            {error}
+          </div>
+        )}
         {result.status !== 'accepted' && result.status !== 'wrong_answer' && (
           <div className="mb-3 rounded-md border border-rose-500/25 bg-rose-500/[0.07] px-3 py-2 font-mono text-[11px] text-rose-300">
             {statusText[result.status] ?? result.status}
