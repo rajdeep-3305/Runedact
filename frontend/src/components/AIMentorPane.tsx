@@ -39,9 +39,9 @@ export const AIMentorPane: React.FC<AIMentorPaneProps> = ({ messages, onRequestH
             <span className="grid h-5 w-5 place-items-center rounded border border-amber-400/30 bg-amber-400/10 font-mono text-[11px] text-amber-300">
               ᚱ
             </span>
-            <span className="text-xs font-semibold text-zinc-200">mentor</span>
+            <span className="text-[13px] font-semibold text-zinc-200">mentor</span>
           </div>
-          <span className="font-mono text-[10px] text-zinc-600">
+          <span className="font-mono text-[11px] text-zinc-600">
             {messages.length === 0 ? 'no messages' : `${messages.length} messages`}
           </span>
         </div>
@@ -53,7 +53,7 @@ export const AIMentorPane: React.FC<AIMentorPaneProps> = ({ messages, onRequestH
               key={h.level}
               type="button"
               onClick={() => setActiveHintLevel(h.level)}
-              className={`flex items-center justify-center gap-1.5 rounded py-1 font-mono text-[10px] transition cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 rounded py-1 font-mono text-[11px] transition cursor-pointer ${
                 activeHintLevel === h.level
                   ? 'bg-amber-400/15 text-amber-300'
                   : 'text-zinc-500 hover:text-zinc-300'
@@ -69,11 +69,11 @@ export const AIMentorPane: React.FC<AIMentorPaneProps> = ({ messages, onRequestH
       </div>
 
       {/* messages */}
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3.5 text-xs">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3.5 text-[13px]">
         {messages.length === 0 && !isLoading ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
             <span className="font-mono text-2xl text-zinc-800">ᚱ</span>
-            <p className="max-w-[220px] text-[11px] leading-relaxed text-zinc-600">
+            <p className="max-w-[230px] text-xs leading-relaxed text-zinc-600">
               hints, not answers. pick a level and ask — or send an empty message for a nudge.
             </p>
             <div className="flex flex-col gap-1.5">
@@ -81,7 +81,7 @@ export const AIMentorPane: React.FC<AIMentorPaneProps> = ({ messages, onRequestH
                 <button
                   key={s}
                   onClick={() => send(s)}
-                  className="rounded-md border border-zinc-800 px-2.5 py-1 font-mono text-[10px] text-zinc-400 transition hover:border-zinc-700 hover:text-zinc-200 cursor-pointer"
+                  className="rounded-md border border-zinc-800 px-2.5 py-1 font-mono text-[11px] text-zinc-400 transition hover:border-zinc-700 hover:text-zinc-200 cursor-pointer"
                 >
                   {s}
                 </button>
@@ -93,16 +93,16 @@ export const AIMentorPane: React.FC<AIMentorPaneProps> = ({ messages, onRequestH
             const isUser = m.role === 'user';
             return isUser ? (
               <div key={m.id} className="flex justify-end">
-                <div className="max-w-[85%] rounded-lg rounded-br-sm border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-[12px] leading-relaxed text-amber-100/90">
+                <div className="max-w-[85%] rounded-lg rounded-br-sm border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-[13px] leading-relaxed text-amber-100/90">
                   {m.content}
                 </div>
               </div>
             ) : (
               <div key={m.id} className="border-l-2 border-zinc-800 pl-3">
-                <p className="whitespace-pre-wrap text-[12px] leading-relaxed text-zinc-300">
+                <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-300">
                   {m.content}
                 </p>
-                <div className="mt-1.5 flex items-center gap-2 font-mono text-[9px] text-zinc-600">
+                <div className="mt-1.5 flex items-center gap-2 font-mono text-[10px] text-zinc-600">
                   <span>level {m.hintLevel}</span>
                   {m.wasBlocked && <span className="text-amber-500">· guarded</span>}
                   {m.latencyMs !== undefined && <span>· {m.latencyMs}ms</span>}
@@ -126,7 +126,7 @@ export const AIMentorPane: React.FC<AIMentorPaneProps> = ({ messages, onRequestH
       {/* input */}
       {error && (
         <div className="border-t border-zinc-800/80 px-3 pt-2">
-          <div className="rounded-md border border-rose-500/25 bg-rose-500/[0.07] px-2.5 py-1.5 font-mono text-[10px] leading-relaxed text-rose-300">
+          <div className="rounded-md border border-rose-500/25 bg-rose-500/[0.07] px-2.5 py-1.5 font-mono text-[11px] leading-relaxed text-rose-300">
             {error}
           </div>
         </div>
@@ -137,7 +137,7 @@ export const AIMentorPane: React.FC<AIMentorPaneProps> = ({ messages, onRequestH
           value={userQuery}
           onChange={(e) => setUserQuery(e.target.value)}
           placeholder="ask, or send empty for a nudge…"
-          className="min-w-0 flex-1 rounded-md border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-xs text-zinc-200 outline-none transition placeholder:text-zinc-600 focus:border-amber-400/40"
+          className="min-w-0 flex-1 rounded-md border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-[13px] text-zinc-200 outline-none transition placeholder:text-zinc-600 focus:border-amber-400/40"
         />
         <button
           type="submit"
