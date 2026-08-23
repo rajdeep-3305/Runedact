@@ -42,7 +42,7 @@ export const Modal: React.FC<ModalProps> = ({
         <div className="flex shrink-0 items-center justify-between border-b border-zinc-800/80 px-4 py-3">
           <div>
             <h2 className="text-sm font-semibold text-zinc-100">{title}</h2>
-            {subtitle && <p className="mt-0.5 font-mono text-[10px] text-zinc-500">{subtitle}</p>}
+            {subtitle && <p className="mt-0.5 font-mono text-[11px] text-zinc-500">{subtitle}</p>}
           </div>
           <div className="flex items-center gap-2">
             {actions}
