@@ -1,5 +1,6 @@
 import React from 'react';
 import type { ProblemDetail } from '../types';
+import { difficultyClasses } from '../lib/ui';
 
 interface ProblemPaneProps {
   problem: ProblemDetail | null;
@@ -13,7 +14,7 @@ export const ProblemPane: React.FC<ProblemPaneProps> = ({ problem, loading }) =>
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
-            className="h-3 animate-pulse rounded bg-zinc-800/70"
+            className="h-3.5 animate-pulse rounded bg-zinc-800/70"
             style={{ width: `${85 - i * 9}%` }}
           />
         ))}
@@ -24,22 +25,29 @@ export const ProblemPane: React.FC<ProblemPaneProps> = ({ problem, loading }) =>
   return (
     <div className="flex h-full flex-col overflow-y-auto bg-zinc-950">
       <div className="border-b border-zinc-800/70 p-5">
-        <h1 className="font-sans text-lg font-semibold tracking-tight text-zinc-100">
+        <h1 className="font-sans text-xl font-semibold tracking-tight text-zinc-100">
           {problem.title}
         </h1>
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          <span className="rounded border border-amber-400/25 bg-amber-400/10 px-1.5 py-0.5 font-mono text-[10px] text-amber-300">
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+          <span className={difficultyClasses(problem.difficulty)}>
+            <span className={`h-1.5 w-1.5 rounded-full ${
+              problem.difficulty === 'Easy'
+                ? 'bg-lime-300'
+                : problem.difficulty === 'Medium'
+                  ? 'bg-amber-300'
+                  : 'bg-orange-400'
+            }`} />
             {problem.difficulty.toLowerCase()}
           </span>
           {problem.tags.map((t) => (
-            <span key={t} className="font-mono text-[10px] text-zinc-500">
+            <span key={t} className="font-mono text-[11px] text-zinc-500">
               #{t.toLowerCase().replace(/\s+/g, '-')}
             </span>
           ))}
         </div>
       </div>
 
-      <div className="space-y-6 p-5 text-[13px] leading-relaxed text-zinc-300">
+      <div className="space-y-6 p-5 text-sm leading-relaxed text-zinc-300">
         {/* statement */}
         <div className="border-l-2 border-zinc-800 pl-4">
           <p className="whitespace-pre-line">{problem.description}</p>
@@ -47,14 +55,14 @@ export const ProblemPane: React.FC<ProblemPaneProps> = ({ problem, loading }) =>
 
         {/* examples */}
         <section>
-          <h3 className="mb-2.5 font-mono text-[10px] uppercase tracking-widest text-zinc-500">
+          <h3 className="mb-2.5 font-mono text-[11px] uppercase tracking-widest text-zinc-500">
             examples
           </h3>
           <ol className="space-y-2.5">
             {problem.visible_test_cases.map((tc, idx) => (
               <li
                 key={idx}
-                className="rounded-md border border-zinc-800/80 bg-zinc-900/40 p-3 font-mono text-[11px]"
+                className="rounded-md border border-zinc-800/80 bg-zinc-900/40 p-3 font-mono text-xs"
               >
                 <div className="text-zinc-500">
                   <span className="text-zinc-600">in </span>
@@ -62,7 +70,7 @@ export const ProblemPane: React.FC<ProblemPaneProps> = ({ problem, loading }) =>
                 </div>
                 <div>
                   <span className="text-zinc-600">out </span>
-                  <span className="text-emerald-400/90">{JSON.stringify(tc.expected)}</span>
+                  <span className="text-lime-300/90">{JSON.stringify(tc.expected)}</span>
                 </div>
               </li>
             ))}
@@ -71,10 +79,10 @@ export const ProblemPane: React.FC<ProblemPaneProps> = ({ problem, loading }) =>
 
         {/* constraints */}
         <section>
-          <h3 className="mb-2.5 font-mono text-[10px] uppercase tracking-widest text-zinc-500">
+          <h3 className="mb-2.5 font-mono text-[11px] uppercase tracking-widest text-zinc-500">
             constraints
           </h3>
-          <ul className="space-y-1 font-mono text-[11px] text-zinc-400">
+          <ul className="space-y-1 font-mono text-xs text-zinc-400">
             {problem.constraints.map((c, i) => (
               <li key={i}>
                 <span className="text-zinc-600">{i + 1}. </span>

@@ -7,7 +7,7 @@
 
 @layer base {
   body {
-    @apply bg-zinc-950 font-sans text-zinc-200 antialiased;
+    @apply bg-zinc-950 font-sans text-zinc-300 antialiased;
   }
 
   ::selection {
@@ -40,10 +40,10 @@
   border: 1px solid #3f3f46;
   border-bottom-width: 2px;
   border-radius: 4px;
-  padding: 0 4px;
+  padding: 0 5px;
   font-family: var(--font-mono);
-  font-size: 10px;
-  line-height: 14px;
-  color: #a1a1aa;
+  font-size: 12px;
+  line-height: 17px;
+  color: #b4b8bf;
   background: #18181b;
 }
