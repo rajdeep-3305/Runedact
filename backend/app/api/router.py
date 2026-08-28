@@ -9,6 +9,8 @@ from app.api.schemas import (
     ASTAnalysisRequest,
     ASTAnalysisResponse,
     EvalReportResponse,
+    LeetCodeProblemDetail,
+    LeetCodeProblemSummary,
     MentorHintRequest,
     MentorHintResponse,
     ProblemDetail,
@@ -19,6 +21,7 @@ from app.api.schemas import (
 from app.ast_analyzer.python_ast import analyze_code_ast
 from app.core.database import get_db
 from app.evals.harness import eval_harness
+from app.leetcode.client import LeetCodeError, leetcode_client
 from app.mentor.agent import mentor_agent
 from app.models.submission import EvalRun, MentorDialogue, Submission
 from app.sandbox.executor import sandbox_executor
@@ -151,6 +154,27 @@ def get_mentor_hint(req: MentorHintRequest, db: Session = Depends(get_db)):
         latency_ms=guidance["latency_ms"],
         provider=guidance["provider"],
     )
+
+
+@api_router.get("/leetcode")
+def list_leetcode_problems(limit: int = 50) -> List[LeetCodeProblemSummary]:
+    limit = max(1, min(limit, 100))
+    try:
+        catalog = leetcode_client.catalog(limit=limit)
+    except LeetCodeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    return [LeetCodeProblemSummary(**p) for p in catalog]
+
+
+@api_router.get("/leetcode/{slug}")
+def get_leetcode_problem(slug: str) -> LeetCodeProblemDetail:
+    if not slug.replace("-", "").isalnum() or len(slug) > 80:
+        raise HTTPException(status_code=400, detail="invalid problem slug")
+    try:
+        detail = leetcode_client.question(slug)
+    except LeetCodeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    return LeetCodeProblemDetail(**detail)
 
 
 @api_router.post("/evals/run", response_model=EvalReportResponse)
