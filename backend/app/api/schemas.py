@@ -80,6 +80,24 @@ class MentorHintResponse(BaseModel):
     provider: str
 
 
+class LeetCodeProblemSummary(BaseModel):
+    id: str
+    title: str
+    difficulty: str
+    tags: List[str]
+    paid_only: bool
+
+
+class LeetCodeProblemDetail(BaseModel):
+    id: str
+    title: str
+    difficulty: str
+    tags: List[str]
+    paid_only: bool
+    description: str
+    hints: List[str]
+
+
 class EvalReportResponse(BaseModel):
     benchmark_name: str
     total_samples: int
