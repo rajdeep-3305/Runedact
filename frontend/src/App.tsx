@@ -7,6 +7,7 @@ import { ExecutionPane } from './components/ExecutionPane';
 import { AIMentorPane } from './components/AIMentorPane';
 import { ASTInsightsModal } from './components/ASTInsightsModal';
 import { EvalDashboardModal } from './components/EvalDashboardModal';
+import { LeetCodeBrowserModal } from './components/LeetCodeBrowserModal';
 
 export const App: React.FC = () => {
   const [problems, setProblems] = useState<ProblemSummary[]>([]);
@@ -26,6 +27,7 @@ export const App: React.FC = () => {
   const [messages, setMessages] = useState<MentorMessage[]>([]);
   const [isMentorLoading, setIsMentorLoading] = useState<boolean>(false);
   const [isEvalModalOpen, setIsEvalModalOpen] = useState<boolean>(false);
+  const [isLTBrowserOpen, setIsLTBrowserOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchProblems = async () => {
@@ -207,6 +209,7 @@ export const App: React.FC = () => {
         onRunCode={handleRunCode}
         isRunning={isRunning}
         onOpenEvals={() => setIsEvalModalOpen(true)}
+        onOpenLeetCode={() => setIsLTBrowserOpen(true)}
         onTriggerAST={handleTriggerAST}
         isAnalyzing={isAnalyzingAST}
       />
@@ -249,6 +252,10 @@ export const App: React.FC = () => {
       <EvalDashboardModal
         isOpen={isEvalModalOpen}
         onClose={() => setIsEvalModalOpen(false)}
+      />
+      <LeetCodeBrowserModal
+        isOpen={isLTBrowserOpen}
+        onClose={() => setIsLTBrowserOpen(false)}
       />
     </div>
   );
