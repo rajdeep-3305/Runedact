@@ -88,6 +88,11 @@ class LeetCodeProblemSummary(BaseModel):
     paid_only: bool
 
 
+class LeetCodePracticePack(BaseModel):
+    entry_point: str
+    starter_code: str
+
+
 class LeetCodeProblemDetail(BaseModel):
     id: str
     title: str
@@ -96,6 +101,14 @@ class LeetCodeProblemDetail(BaseModel):
     paid_only: bool
     description: str
     hints: List[str]
+    # present when the problem can be practiced on runedact: statement
+    # examples parsed into runnable test cases (examples-only judging)
+    practice: Optional[LeetCodePracticePack] = None
+
+
+class LeetCodeRunRequest(BaseModel):
+    slug: str = Field(pattern=r"^[a-z0-9-]{1,80}$")
+    code: str = Field(max_length=65_536)
 
 
 class EvalReportResponse(BaseModel):
