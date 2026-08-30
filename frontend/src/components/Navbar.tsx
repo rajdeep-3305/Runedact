@@ -10,6 +10,7 @@ interface NavbarProps {
   onRunCode: () => void;
   isRunning: boolean;
   onOpenEvals: () => void;
+  onOpenLeetCode: () => void;
   onTriggerAST: () => void;
   isAnalyzing: boolean;
 }
@@ -21,6 +22,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onRunCode,
   isRunning,
   onOpenEvals,
+  onOpenLeetCode,
   onTriggerAST,
   isAnalyzing
 }) => {
@@ -75,6 +77,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           className="rounded-md px-2.5 py-1.5 font-mono text-xs text-zinc-400 transition hover:bg-zinc-800/70 hover:text-zinc-200 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
         >
           {isAnalyzing ? 'reading ast…' : 'insights'}
+        </button>
+
+        <button
+          onClick={onOpenLeetCode}
+          className="rounded-md px-2.5 py-1.5 font-mono text-xs text-zinc-400 transition hover:bg-zinc-800/70 hover:text-zinc-200 cursor-pointer"
+        >
+          explore
         </button>
 
         <button

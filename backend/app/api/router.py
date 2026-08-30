@@ -11,6 +11,7 @@ from app.api.schemas import (
     EvalReportResponse,
     LeetCodeProblemDetail,
     LeetCodeProblemSummary,
+    LeetCodeRunRequest,
     MentorHintRequest,
     MentorHintResponse,
     ProblemDetail,
@@ -175,6 +176,48 @@ def get_leetcode_problem(slug: str) -> LeetCodeProblemDetail:
     except LeetCodeError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     return LeetCodeProblemDetail(**detail)
+
+
+@api_router.post("/leetcode/{slug}/run", response_model=RunCodeResponse)
+def run_leetcode_code(slug: str, req: LeetCodeRunRequest, db: Session = Depends(get_db)):
+    if req.slug != slug:
+        raise HTTPException(status_code=422, detail="slug mismatch between path and body")
+    try:
+        pack = leetcode_client.practice(slug)
+    except LeetCodeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+    if not pack["practice"]:
+        raise HTTPException(status_code=422, detail="this problem can't be practiced on runedact (examples could not be parsed)")
+
+    result = sandbox_executor.run_with_harness(req.code, pack["practice"]["harness_code"])
+    test_results = result.get("test_results", [])
+
+    # imported problems are practice-only; still worth persisting like any run
+    try:
+        db.add(
+            Submission(
+                problem_id=f"leetcode:{slug}",
+                code=req.code,
+                status=result["status"],
+                execution_time_ms=result["execution_time_ms"],
+            )
+        )
+        db.commit()
+    except Exception:
+        logger.exception("Failed to save leetcode submission")
+        db.rollback()
+
+    return RunCodeResponse(
+        status=result["status"],
+        exit_code=result.get("exit_code", 0),
+        execution_time_ms=result["execution_time_ms"],
+        stdout=result.get("stdout", ""),
+        stderr=result.get("stderr", ""),
+        test_results=test_results,
+        passed_count=sum(1 for tc in test_results if tc.get("passed", False)),
+        total_count=len(test_results),
+    )
 
 
 @api_router.post("/evals/run", response_model=EvalReportResponse)

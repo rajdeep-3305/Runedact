@@ -5,6 +5,19 @@ export interface ProblemSummary {
   tags: string[];
 }
 
+export interface LeetCodeProblemSummary {
+  id: string;
+  title: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  tags: string[];
+  paid_only: boolean;
+}
+
+export interface LeetCodeProblemDetail extends LeetCodeProblemSummary {
+  description: string;
+  hints: string[];
+}
+
 export interface TestCase {
   input: Record<string, any>;
   expected: any;
