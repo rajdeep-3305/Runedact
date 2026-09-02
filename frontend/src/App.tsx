@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { ProblemSummary, ProblemDetail, RunCodeResponse, ASTAnalysisResponse, MentorMessage } from './types';
+import type { ProblemSummary, ProblemDetail, RunCodeResponse, ASTAnalysisResponse, MentorMessage, LeetCodeProblemDetail } from './types';
 import { Navbar } from './components/Navbar';
 import { ProblemPane } from './components/ProblemPane';
 import { CodeEditorPane } from './components/CodeEditorPane';
@@ -28,6 +28,10 @@ export const App: React.FC = () => {
   const [isMentorLoading, setIsMentorLoading] = useState<boolean>(false);
   const [isEvalModalOpen, setIsEvalModalOpen] = useState<boolean>(false);
   const [isLTBrowserOpen, setIsLTBrowserOpen] = useState<boolean>(false);
+
+  // leetcode practice mode: an imported problem loaded into the editor,
+  // graded against its statement examples only
+  const [practiceProblem, setPracticeProblem] = useState<LeetCodeProblemDetail | null>(null);
 
   useEffect(() => {
     const fetchProblems = async () => {
@@ -73,11 +77,49 @@ export const App: React.FC = () => {
     fetchDetail();
   }, [selectedProblemId]);
 
+  const handleStartPractice = (problem: LeetCodeProblemDetail) => {
+    if (!problem.practice) return;
+    setIsLTBrowserOpen(false);
+    setPracticeProblem(problem);
+    setCode(problem.practice.starter_code);
+    setExecutionResult(null);
+    setRunError(null);
+    setHintError(null);
+    setAstData(null);
+    setMessages([]);
+  };
+
+  const handleExitPractice = () => {
+    setPracticeProblem(null);
+    setExecutionResult(null);
+    setRunError(null);
+    setHintError(null);
+    setAstData(null);
+    setMessages([]);
+  };
+
   const handleRunCode = async () => {
-    if (!selectedProblemId || isRunning) return;
+    if (isRunning) return;
     setIsRunning(true);
     setRunError(null);
     try {
+      if (practiceProblem) {
+        // practice mode grades against statement examples via the leetcode route
+        const res = await fetch(`/api/v1/leetcode/${practiceProblem.id}/run`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug: practiceProblem.id, code })
+        });
+        if (res.ok) {
+          setExecutionResult(await res.json());
+        } else if (res.status === 422) {
+          setRunError('code is too large to run (64KB limit)');
+        } else {
+          setRunError(`run failed (${res.status})`);
+        }
+        return;
+      }
+      if (!selectedProblemId) return;
       const res = await fetch('/api/v1/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -183,7 +225,9 @@ export const App: React.FC = () => {
   };
 
   const handleResetCode = () => {
-    if (currentProblem) {
+    if (practiceProblem?.practice) {
+      setCode(practiceProblem.practice.starter_code);
+    } else if (currentProblem) {
       setCode(currentProblem.starter_code['python'] || '');
     }
   };
@@ -212,11 +256,25 @@ export const App: React.FC = () => {
         onOpenLeetCode={() => setIsLTBrowserOpen(true)}
         onTriggerAST={handleTriggerAST}
         isAnalyzing={isAnalyzingAST}
+        practiceProblem={practiceProblem}
+        onExitPractice={handleExitPractice}
       />
 
       <main className="flex min-h-0 flex-1">
         <aside className="h-full w-[300px] shrink-0 overflow-hidden border-r border-zinc-800/80">
-          <ProblemPane problem={currentProblem} loading={loadingProblem} />
+          <ProblemPane
+            problem={practiceProblem ? {
+              id: practiceProblem.id,
+              title: practiceProblem.title,
+              difficulty: practiceProblem.difficulty,
+              tags: practiceProblem.tags,
+              description: practiceProblem.description,
+              constraints: [`imported from leetcode — graded against statement examples only`],
+              starter_code: {},
+              visible_test_cases: practiceProblem.practice?.test_cases ?? []
+            } : currentProblem}
+            loading={loadingProblem && !practiceProblem}
+          />
         </aside>
 
         <section className="flex min-w-0 flex-1 flex-col">
@@ -235,12 +293,22 @@ export const App: React.FC = () => {
         </section>
 
         <aside className="h-full w-[320px] shrink-0 overflow-hidden border-l border-zinc-800/80">
-          <AIMentorPane
-            messages={messages}
-            onRequestHint={handleRequestHint}
-            isLoading={isMentorLoading}
-            error={hintError}
-          />
+          {practiceProblem ? (
+            <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
+              <span className="font-mono text-2xl text-zinc-800">ᚱ</span>
+              <p className="max-w-[230px] text-xs leading-relaxed text-zinc-600">
+                the mentor only knows the built-in catalog. exit practice to get
+                hints on an imported problem.
+              </p>
+            </div>
+          ) : (
+            <AIMentorPane
+              messages={messages}
+              onRequestHint={handleRequestHint}
+              isLoading={isMentorLoading}
+              error={hintError}
+            />
+          )}
         </aside>
       </main>
 
@@ -256,6 +324,7 @@ export const App: React.FC = () => {
       <LeetCodeBrowserModal
         isOpen={isLTBrowserOpen}
         onClose={() => setIsLTBrowserOpen(false)}
+        onPractice={handleStartPractice}
       />
     </div>
   );

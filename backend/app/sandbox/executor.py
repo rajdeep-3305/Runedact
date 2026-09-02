@@ -9,7 +9,6 @@ import resource
 from typing import Any, Dict, List, Optional
 
 from app.core.config import settings
-from app.sandbox.problems import PROBLEMS
 
 
 class CodeSandbox:
@@ -52,11 +51,15 @@ class CodeSandbox:
         }
 
     def run_submission(self, problem_id: str, code: str) -> Dict[str, Any]:
-        if problem_id not in PROBLEMS:
-            return self._error("error", f"Problem '{problem_id}' not found.")
+        from app.sandbox.problems import PROBLEMS
 
-        problem = PROBLEMS[problem_id]
-        full_code = f"{code}\n\n{problem['harness_code']}"
+        problem = PROBLEMS.get(problem_id)
+        if problem is None:
+            return self._error("error", f"Problem '{problem_id}' not found.")
+        return self.run_with_harness(code, problem["harness_code"])
+
+    def run_with_harness(self, code: str, harness_code: str) -> Dict[str, Any]:
+        full_code = f"{code}\n\n{harness_code}"
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
             tmp.write(full_code)
