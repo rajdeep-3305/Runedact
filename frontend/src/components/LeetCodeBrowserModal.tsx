@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ExternalLink, Search } from 'lucide-react';
+import { ExternalLink, Play, Search } from 'lucide-react';
 import type { LeetCodeProblemDetail, LeetCodeProblemSummary } from '../types';
 import { Modal } from './Modal';
 import { difficultyClasses } from '../lib/ui';
@@ -7,6 +7,7 @@ import { difficultyClasses } from '../lib/ui';
 interface LeetCodeBrowserModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onPractice: (problem: LeetCodeProblemDetail) => void;
 }
 
 type View =
@@ -30,7 +31,11 @@ function DifficultyPill({ difficulty }: { difficulty: string }) {
   );
 }
 
-export const LeetCodeBrowserModal: React.FC<LeetCodeBrowserModalProps> = ({ isOpen, onClose }) => {
+export const LeetCodeBrowserModal: React.FC<LeetCodeBrowserModalProps> = ({
+  isOpen,
+  onClose,
+  onPractice
+}) => {
   const [problems, setProblems] = useState<LeetCodeProblemSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -219,6 +224,35 @@ export const LeetCodeBrowserModal: React.FC<LeetCodeBrowserModalProps> = ({ isOp
                   <p className="mt-2 font-mono text-[10px] text-zinc-700">
                     hints are spoily — try the problem before reading them.
                   </p>
+                </div>
+              )}
+
+              {/* practice affordance */}
+              {view.problem.practice ? (
+                <div className="mt-5 rounded-md border border-amber-400/25 bg-amber-400/[0.06] p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-amber-200/90">practice on runedact</p>
+                      <p className="mt-0.5 text-[11px] leading-relaxed text-zinc-500">
+                        graded against the {view.problem.practice.test_cases.length} statement
+                        example{view.problem.practice.test_cases.length === 1 ? '' : 's'} — leetcode
+                        keeps its full test set private.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => onPractice(view.problem)}
+                      className="flex shrink-0 items-center gap-1.5 rounded-md bg-amber-400 px-2.5 py-1.5 text-xs font-semibold text-zinc-950 transition hover:bg-amber-300 cursor-pointer"
+                    >
+                      <Play className="h-3 w-3" />
+                      solve here
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-5 rounded-md border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 text-[11px] leading-relaxed text-zinc-500">
+                  this one can't be imported for practice — its examples aren't plain python
+                  values (linked lists, trees, graphs) or it has none to parse. follow the
+                  leetcode link above to solve it there.
                 </div>
               )}
             </div>

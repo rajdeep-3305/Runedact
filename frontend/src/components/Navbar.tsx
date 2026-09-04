@@ -1,5 +1,5 @@
 import React from 'react';
-import type { ProblemSummary } from '../types';
+import type { ProblemSummary, LeetCodeProblemDetail } from '../types';
 import { runKeyLabel } from '../lib/keys';
 import { difficultyClasses } from '../lib/ui';
 
@@ -13,6 +13,8 @@ interface NavbarProps {
   onOpenLeetCode: () => void;
   onTriggerAST: () => void;
   isAnalyzing: boolean;
+  practiceProblem: LeetCodeProblemDetail | null;
+  onExitPractice: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -24,7 +26,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenEvals,
   onOpenLeetCode,
   onTriggerAST,
-  isAnalyzing
+  isAnalyzing,
+  practiceProblem,
+  onExitPractice
 }) => {
   const selected = problems.find((p) => p.id === selectedProblemId);
 
@@ -42,7 +46,23 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       <div className="h-5 w-px bg-zinc-800" />
 
-      {/* problem picker: difficulty pill left, dropdown over the title */}
+      {practiceProblem ? (
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <span className="inline-flex items-center rounded border border-amber-300/30 bg-amber-300/10 px-1.5 py-0.5 font-mono text-[11px] text-amber-300">
+            leetcode
+          </span>
+          <span className="min-w-0 truncate text-[13px] text-zinc-200">
+            {practiceProblem.title}
+          </span>
+          <button
+            onClick={onExitPractice}
+            title="back to the built-in catalog"
+            className="rounded px-1.5 py-0.5 font-mono text-[11px] text-zinc-500 transition hover:bg-zinc-800 hover:text-zinc-200 cursor-pointer"
+          >
+            ← exit practice
+          </button>
+        </div>
+      ) : (
       <div className="relative flex min-w-0 max-w-[360px] flex-1 items-center rounded-md border border-zinc-800 bg-zinc-900/60 hover:border-zinc-700">
         {selected && (
           <span className={`pointer-events-none absolute left-2 ${difficultyClasses(selected.difficulty, 'sm')}`}>
@@ -69,6 +89,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
         </svg>
       </div>
+      )}
 
       <div className="ml-auto flex items-center gap-2">
         <button

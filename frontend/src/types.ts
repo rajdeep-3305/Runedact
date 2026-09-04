@@ -13,9 +13,17 @@ export interface LeetCodeProblemSummary {
   paid_only: boolean;
 }
 
+export interface LeetCodePracticePack {
+  entry_point: string;
+  starter_code: string;
+  test_cases: TestCase[];
+}
+
 export interface LeetCodeProblemDetail extends LeetCodeProblemSummary {
   description: string;
   hints: string[];
+  // present when the statement's examples could be turned into sandbox tests
+  practice: LeetCodePracticePack | null;
 }
 
 export interface TestCase {
