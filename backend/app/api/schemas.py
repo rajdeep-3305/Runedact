@@ -115,9 +115,9 @@ class EvalReportResponse(BaseModel):
     benchmark_name: str
     total_samples: int
     leak_rate_percentage: float
-    faithfulness_score: Optional[float] = 0.0
-    answer_relevance_score: Optional[float] = 0.0
-    context_recall_score: Optional[float] = 0.0
+    analysis_mention_pct: Optional[float] = 0.0
+    concept_coverage_pct: Optional[float] = 0.0
+    invariant_coverage_pct: Optional[float] = 0.0
     quality_score: float
     avg_latency_ms: float
     results: List[Dict[str, Any]]

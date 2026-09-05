@@ -5,10 +5,10 @@ from typing import Any, Dict, List
 
 from app.core.database import SessionLocal
 from app.evals.metrics import (
-    calculate_answer_relevance,
-    calculate_context_recall,
-    calculate_faithfulness,
-    score_quality,
+    covers_concepts,
+    covers_invariants,
+    hint_quality_score,
+    mentions_analysis,
 )
 from app.mentor.agent import mentor_agent
 from app.models.submission import EvalRun
@@ -26,7 +26,7 @@ class EvalHarness:
 
     def run_benchmark(self, save_to_db: bool = True) -> Dict[str, Any]:
         results = []
-        totals = {"faithfulness": 0.0, "relevance": 0.0, "recall": 0.0, "quality": 0.0}
+        totals = {"analysis": 0.0, "concepts": 0.0, "invariants": 0.0, "quality": 0.0}
         total_latency = 0.0
         leaks = 0
 
@@ -45,17 +45,17 @@ class EvalHarness:
             latency = guidance["latency_ms"]
             ast_summary = guidance.get("ast_insights", {})
 
-            faithfulness = calculate_faithfulness(content, ast_summary, item["problem_id"])
-            relevance = calculate_answer_relevance(content, item.get("expected_flaw", ""), concepts)
-            recall = calculate_context_recall(content, concepts, invariants)
-            quality = score_quality(content)
+            analysis = mentions_analysis(content, ast_summary, item["problem_id"])
+            concepts_hit = covers_concepts(content, item.get("expected_flaw", ""), concepts)
+            invs_hit = covers_invariants(content, concepts, invariants)
+            quality = hint_quality_score(content)
 
             if leaked:
                 leaks += 1
 
-            totals["faithfulness"] += faithfulness
-            totals["relevance"] += relevance
-            totals["recall"] += recall
+            totals["analysis"] += analysis
+            totals["concepts"] += concepts_hit
+            totals["invariants"] += invs_hit
             totals["quality"] += quality
             total_latency += latency
 
@@ -67,9 +67,9 @@ class EvalHarness:
                     "expected_flaw": item.get("expected_flaw"),
                     "hint_generated": content,
                     "leaked_solution": leaked,
-                    "faithfulness": faithfulness,
-                    "answer_relevance": relevance,
-                    "context_recall": recall,
+                    "analysis_pct": analysis,
+                    "concepts_pct": concepts_hit,
+                    "invs_pct": invs_hit,
                     "quality_score": quality,
                     "latency_ms": latency,
                 }
@@ -80,9 +80,9 @@ class EvalHarness:
             "benchmark_name": "hint quality",
             "total_samples": len(results),
             "leak_rate_percentage": round(leaks / n * 100.0, 1),
-            "faithfulness_score": round(totals["faithfulness"] / n, 1),
-            "answer_relevance_score": round(totals["relevance"] / n, 1),
-            "context_recall_score": round(totals["recall"] / n, 1),
+            "analysis_mention_pct": round(totals["analysis"] / n, 1),
+            "concept_coverage_pct": round(totals["concepts"] / n, 1),
+            "invariant_coverage_pct": round(totals["invariants"] / n, 1),
             "quality_score": round(totals["quality"] / n, 1),
             "avg_latency_ms": round(total_latency / n, 2),
             "results": results,
