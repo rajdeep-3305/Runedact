@@ -19,9 +19,8 @@ CONCEPT_KEYWORDS = (
 )
 
 
-def calculate_faithfulness(hint: str, ast_data: Dict[str, Any], problem_id: str) -> float:
-    """Share of hint sentences that reference the analysis, the problem, or ask a question."""
-    sentences = [s.strip() for s in re.split(r"[.!?\\n]", hint) if len(s.strip().split()) >= 3]
+def mentions_analysis(hint: str, ast_data: Dict[str, Any], problem_id: str) -> float:
+    sentences = [s.strip() for s in re.split(r"[.!?\n]", hint) if len(s.strip().split()) >= 3]
     if not sentences:
         return 100.0
 
@@ -40,8 +39,7 @@ def calculate_faithfulness(hint: str, ast_data: Dict[str, Any], problem_id: str)
     return round(supported / len(sentences) * 100.0, 1)
 
 
-def calculate_answer_relevance(hint: str, expected_flaw: str, ground_truth_concepts: List[str]) -> float:
-    """Weighted share of ground-truth concepts the hint touches, with a bonus for asking a question."""
+def covers_concepts(hint: str, expected_flaw: str, ground_truth_concepts: List[str]) -> float:
     if not ground_truth_concepts:
         return 100.0
 
@@ -62,8 +60,7 @@ def calculate_answer_relevance(hint: str, expected_flaw: str, ground_truth_conce
     return round(score * 100.0, 1)
 
 
-def calculate_context_recall(hint: str, ground_truth_concepts: List[str], context_invariants: List[str]) -> float:
-    """Share of target concepts and invariants whose tokens appear in the hint."""
+def covers_invariants(hint: str, ground_truth_concepts: List[str], context_invariants: List[str]) -> float:
     targets = ground_truth_concepts + context_invariants
     if not targets:
         return 100.0
@@ -77,8 +74,7 @@ def calculate_context_recall(hint: str, ground_truth_concepts: List[str], contex
     return round(recalled / len(targets) * 100.0, 1)
 
 
-def score_quality(content: str) -> float:
-    """Heuristic score: asks questions, stays concise, doesn't hand over the answer."""
+def hint_quality_score(content: str) -> float:
     score = 0.0
 
     question_count = content.count("?")

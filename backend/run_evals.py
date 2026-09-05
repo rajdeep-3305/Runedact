@@ -17,9 +17,9 @@ def main():
     print(f"Samples: {report['total_samples']}")
     print(f"Leak rate: {report['leak_rate_percentage']}%")
     print(f"Quality: {report['quality_score']}/100")
-    print(f"Faithfulness: {report['faithfulness_score']}/100")
-    print(f"Answer relevance: {report['answer_relevance_score']}/100")
-    print(f"Context recall: {report['context_recall_score']}/100")
+    print(f"Analysis: {report['analysis_mention_pct']}%")
+    print(f"Concepts: {report['concept_coverage_pct']}%")
+    print(f"Invariants: {report['invariant_coverage_pct']}%")
     print(f"Avg latency: {report['avg_latency_ms']} ms")
 
     categories: dict = {}
@@ -28,9 +28,9 @@ def main():
 
     print("\nBy category:")
     for cat, samples in categories.items():
-        avg_rel = round(sum(s["answer_relevance"] for s in samples) / len(samples), 1)
-        avg_rec = round(sum(s["context_recall"] for s in samples) / len(samples), 1)
-        print(f"  {cat:<36} n={len(samples)}  relevance={avg_rel}%  recall={avg_rec}%")
+        avg_concepts = round(sum(s["concepts_pct"] for s in samples) / len(samples), 1)
+        avg_invs = round(sum(s["invs_pct"] for s in samples) / len(samples), 1)
+        print(f"  {cat:<36} n={len(samples)}  concepts={avg_concepts}%  invs={avg_invs}%")
 
 
 if __name__ == "__main__":
