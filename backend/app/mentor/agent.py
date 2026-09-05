@@ -119,8 +119,9 @@ class MentorAgent:
             "content": content,
             "leaked_solution": was_leaked,
             "ast_insights": ast_summary,
-            "sandbox_status": sandbox_status,                "latency_ms": llm_response.get("latency_ms", 0.0),
-                "provider": llm_response.get("provider", "mock"),
+            "sandbox_status": sandbox_status,
+            "latency_ms": llm_response.get("latency_ms", 0.0),
+            "provider": llm_response.get("provider", "mock"),
         }
 
 
