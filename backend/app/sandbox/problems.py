@@ -59,6 +59,7 @@ PROBLEMS: Dict[str, Dict[str, Any]] = {
             "Only one valid answer exists.",
         ],
         "starter_code": {"python": TWO_SUM_STARTER},
+        # need test_cases for the harness template too, so re-use it with :=
         "test_cases": (test_cases := [
             {"input": {"nums": [2, 7, 11, 15], "target": 9}, "expected": [0, 1], "hidden": False},
             {"input": {"nums": [3, 2, 4], "target": 6}, "expected": [1, 2], "hidden": False},
