@@ -57,6 +57,8 @@ class LeetCodeError(Exception):
 
 class _HTMLToText(HTMLParser):
 
+    # tried BeautifulSoup + lxml first but the extra dep was bloat in docker
+    # this works good enough for leetcode's simple html
     _BLOCK_TAGS = {"p", "div", "ul", "ol", "h1", "h2", "h3", "h4", "table", "tr"}
 
     def __init__(self) -> None:

@@ -34,6 +34,8 @@ class ASTAnalyzer(ast.NodeVisitor):
         if any(arg.arg.lower() in ("memo", "cache", "dp") for arg in node.args.args):
             self.is_memoized = True
 
+        # only catches calls to the current function — misses mutual
+        # recursion between two functions, but that's niche for now
         recursive_calls = sum(
             1
             for child in ast.walk(node)
