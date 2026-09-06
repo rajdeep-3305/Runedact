@@ -107,10 +107,10 @@ export const EvalDashboardModal: React.FC<EvalDashboardModalProps> = ({ isOpen, 
               </div>
               <div className="rounded-md border border-zinc-800 bg-zinc-900/40 p-3">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-zinc-600">
-                  relevance
+                  concepts
                 </div>
                 <div className="mt-1 font-mono text-xl font-bold text-zinc-100">
-                  {report.answer_relevance_score}
+                  {report.concept_coverage_pct}
                 </div>
                 <div className="font-mono text-[10px] text-zinc-600">/100</div>
               </div>

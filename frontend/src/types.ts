@@ -109,9 +109,9 @@ export interface EvalReport {
   benchmark_name: string;
   total_samples: number;
   leak_rate_percentage: number;
-  faithfulness_score: number;
-  answer_relevance_score: number;
-  context_recall_score: number;
+  analysis_mention_pct: number;
+  concept_coverage_pct: number;
+  invariant_coverage_pct: number;
   quality_score: number;
   avg_latency_ms: number;
   results: EvalCaseResult[];
