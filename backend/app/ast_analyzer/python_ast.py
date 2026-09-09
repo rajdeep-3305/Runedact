@@ -34,8 +34,8 @@ class ASTAnalyzer(ast.NodeVisitor):
         if any(arg.arg.lower() in ("memo", "cache", "dp") for arg in node.args.args):
             self.is_memoized = True
 
-        # only catches calls to the current function — misses mutual
-        # recursion between two functions, but that's niche for now
+        # only catches direct self-recursion — misses mutual recursion
+        # between two functions, but that's niche for now
         recursive_calls = sum(
             1
             for child in ast.walk(node)
@@ -50,8 +50,8 @@ class ASTAnalyzer(ast.NodeVisitor):
             if recursive_calls >= 2 and not self.is_memoized:
                 self.unmemoized_tree_flag = True
                 self.anti_patterns.append(
-                    f"Un-memoized recursive execution tree in '{node.name}' "
-                    f"({recursive_calls} recursive branches; possible exponential blowup)."
+                    f"recursive call tree in '{node.name}' without memoization — "
+                    f"{recursive_calls} branches, exponential blowup incoming"
                 )
 
         self.generic_visit(node)
@@ -64,7 +64,8 @@ class ASTAnalyzer(ast.NodeVisitor):
 
         if self.current_loop_depth >= 2:
             self.anti_patterns.append(
-                f"Nested loop at line {node.lineno} (depth {self.current_loop_depth}; potential O(N²) bottleneck)."
+                f"Nested loop at line {node.lineno} (depth {self.current_loop_depth}), "
+                f"that's O(N²) territory — probably fine for small inputs but slow on big ones"
             )
 
         if self.current_function:
@@ -77,16 +78,16 @@ class ASTAnalyzer(ast.NodeVisitor):
                 ):
                     self.unmemoized_tree_flag = True
                     self.anti_patterns.append(
-                        f"Recursive call inside loop at line {node.lineno} without memoization; "
-                        "potential exponential complexity."
+                        f"calling '{self.current_function}' inside a loop at line {node.lineno} "
+                        f"without memoization — this is the kind of thing that times out"
                     )
 
         for child in ast.walk(node):
             if isinstance(child, ast.Call) and isinstance(child.func, ast.Attribute):
                 if child.func.attr == "index":
                     self.anti_patterns.append(
-                        f"Linear search 'list.index()' inside loop at line {node.lineno} "
-                        "(results in accidental O(N²) time complexity)."
+                        f".index() inside a loop at line {node.lineno} — "
+                        f"linear scan every iteration, so O(N²) overall. use a dict instead"
                     )
 
         self.generic_visit(node)
@@ -103,31 +104,31 @@ class ASTAnalyzer(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_Dict(self, node: ast.Dict):
-        self.data_structures_used.add("dict (O(1) hash map)")
+        self.data_structures_used.add("dict — O(1) lookups")
         self.generic_visit(node)
 
     def visit_Set(self, node: ast.Set):
-        self.data_structures_used.add("set (O(1) hash set)")
+        self.data_structures_used.add("set — O(1) lookups")
         self.generic_visit(node)
 
     def visit_List(self, node: ast.List):
-        self.data_structures_used.add("list (dynamic array)")
+        self.data_structures_used.add("list — dynamic array")
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call):
         if isinstance(node.func, ast.Name):
             if node.func.id in ("dict", "set"):
-                self.data_structures_used.add(f"{node.func.id} (O(1) lookup table)")
+                self.data_structures_used.add(f"{node.func.id} — O(1) lookups")
             elif node.func.id in ("sorted", "sort"):
-                self.data_structures_used.add("sorting (O(N log N))")
+                self.data_structures_used.add("sort — O(N log N)")
         elif isinstance(node.func, ast.Attribute):
             attr = node.func.attr
             if attr in ("pop", "append", "extend"):
-                self.data_structures_used.add(f"list.{attr} (LIFO stack operation)")
+                self.data_structures_used.add(f"list.{attr} — stack-like ops")
             elif attr in ("get", "keys", "values", "items"):
-                self.data_structures_used.add("hash table lookup")
+                self.data_structures_used.add("dict lookup — O(1)")
             elif attr == "sort":
-                self.data_structures_used.add("in-place sort (O(N log N))")
+                self.data_structures_used.add("in-place sort — O(N log N)")
         self.generic_visit(node)
 
 
@@ -165,7 +166,7 @@ def analyze_code_ast(code: str) -> Dict[str, Any]:
     elif analyzer.max_loop_depth == 2:
         estimated = "O(N²) Quadratic"
     elif analyzer.max_loop_depth == 1:
-        if "sorting (O(N log N))" in analyzer.data_structures_used or "in-place sort (O(N log N))" in analyzer.data_structures_used:
+        if any("O(N log N)" in ds for ds in analyzer.data_structures_used):
             estimated = "O(N log N)"
         else:
             estimated = "O(N) Linear"

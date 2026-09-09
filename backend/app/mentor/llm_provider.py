@@ -3,49 +3,63 @@ from typing import Any, Dict
 
 from app.core.config import settings
 
-# keyword that identifies the situation in the built prompt -> hint per level
+# keyword-matched hints, not from an LLM. i wrote these by hand after seeing
+# the same bugs in my own code a dozen times — rough but hopefully useful
 MOCK_HINTS: Dict[str, Dict[int, str]] = {
-    "nested loop detected": {
-        1: "Notice your nested loop scanning pairs. While this works for small inputs, "
-        "what is the time complexity when the input array grows to 10,000 numbers? "
-        "Can you think of a data structure that offers instantaneous O(1) lookups?",
-        2: "As you iterate through each number `n`, the value you need to find is `complement = target - n`. "
-        "If you store previously visited numbers in a Hash Map (dictionary), how can you check for the complement in O(1) time?",
-        3: "Look at your inner loop: instead of searching the remainder of the array every time, "
-        "check if `target - num` is already in your `seen` map. If yes, return indices immediately; "
-        "otherwise, store `seen[num] = i`. What happens if the array has duplicates?",
+    "nested loop": {
+        1: "btw your nested loop is going to be slow on the bigger test cases. "
+        "for two-sum specifically, instead of checking every pair, think about "
+        "looking up the complement in one pass using a dict.",
+        2: "keep a `seen` dict as you walk through the array. at each number `n`, "
+        "the value you want is `target - n` — if it's already in `seen`, return "
+        "the indices. otherwise add this number to the dict.",
+        3: "so the fix is: drop the inner loop. for i, n in enumerate(nums): "
+        "complement = target - n; if complement in seen: return [seen[complement], i]; "
+        "seen[n] = i. heads up — if the same number appears twice, the dict overwrites "
+        "the earlier index. might not matter for two-sum but good to know.",
     },
-    "time limit exceeded": {
-        1: "Your solution timed out on large test cases! What loop or recursion condition might be "
-        "failing to terminate or repeating calculations over and over?",
-        2: "Check your loop termination or recursion state. Are you advancing your pointers on every iteration, "
-        "or recalculating overlapping subproblems without memoization?",
-        3: "You hit the execution timeout. Look closely at your while loop condition or recursion base cases. "
-        "Ensure your state variables strictly make progress towards termination.",
+    "time_limit_exceeded": {
+        1: "your code ran past the 2s limit. is there a while loop that doesn't "
+        "increment its counter, or are you recursing without a cache?",
+        2: "check that every code path in your loop moves a pointer forward, "
+        "and that every recursive branch hits a base case. if the subproblems "
+        "overlap, you probably need memoization.",
+        3: "timeout usually means infinite loop or exponential blowup. fix the "
+        "loop condition first (make sure the variable changes), then add a "
+        "cache to your recursion if it's branching.",
     },
     "valid parentheses": {
-        1: "Parentheses must match in a Last-In, First-Out order. What classic data structure represents LIFO order?",
-        2: "When you encounter an opening bracket like '(', you wait for its match. When you see a closing bracket ')', "
-        "which opening bracket should it match with? How does a Stack help here?",
-        3: "Consider edge cases: what happens if the string begins with a closing bracket ')' or has odd length? "
-        "Ensure you check if the stack is non-empty before calling `stack.pop()`!",
+        1: "counting open and close brackets isn't enough — order matters. "
+        "what data structure is last-in-first-out?",
+        2: "push on opens, pop on closes. but check that the popped bracket "
+        "actually matches the closing one — not just that the stack isn't empty.",
+        3: "the classic footgun: stack.pop() on a leading ')' crashes. check "
+        "len(stack) > 0 first. also don't forget to make sure the stack is "
+        "empty at the end — extra opens slip through otherwise.",
     },
     "coin change": {
-        1: "If you always pick the largest coin first (greedy), does it always yield the minimum coins for coins=[1, 3, 4] and amount=6? "
-        "Try working that case out by hand!",
-        2: "Since greedy choices can lead to suboptimal outcomes, we need to consider subproblems: "
-        "To make `amount`, what is the relationship with `dp[amount - coin] + 1`?",
-        3: "Initialize a DP array of size `amount + 1` filled with infinity, and `dp[0] = 0`. "
-        "Iterate through each amount from 1 to `target`. For each coin, if `c <= a`, `dp[a] = min(dp[a], 1 + dp[a - c])`.",
+        1: "greedy doesn't work here — try coins=[1,3,4], amount=6. greedy picks "
+        "4 first then needs 1+1, so 3 coins. but the answer is 2 (3+3). "
+        "what approach checks all combos?",
+        2: "this is a DP problem. the idea: min coins for amount `a` is "
+        "1 + min(min_coins(a - coin) for coin in coins). you've seen this pattern.",
+        3: "dp array of size amount+1, fill with amount+1 (avoids float('inf') "
+        "edge case). dp[0] = 0. dp[a] = min(dp[a], 1 + dp[a - coin]). "
+        "return dp[amount] if it's < amount+1, else -1.",
     },
 }
 
+# when nothing keyword-matches, still try to point you somewhere useful
+# instead of just saying "try harder"
 FALLBACK_HINTS = {
-    1: "Let's trace your code on a small example. What is the state of your variables after the first step? "
-    "Does your output match what the problem expects for the base case?",
-    2: "Look at the failing test case. Is the issue in how you maintain your invariant or an off-by-one boundary condition?",
-    3: "Check the return value when no valid answer is found, or when the input is empty or singular. "
-    "What specific line causes the unexpected output?",
+    1: "i haven't seen this exact bug before but let's figure it out. "
+    "grab a pen and trace through your code on a tiny example — what does "
+    "each variable hold after every step?",
+    2: "look at the first failing test case. is your loop off by one, "
+    "or are you forgetting to update some variable inside the loop?",
+    3: "read the error message carefully — the traceback usually tells you "
+    "exactly which line broke and what kind of error it was. "
+    "don't just guess, fix the actual error.",
 }
 
 
