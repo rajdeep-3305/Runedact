@@ -2,34 +2,47 @@
 
 Practice DSA out loud — get hints, never answers.
 
-Your Python runs in a resource-limited sandbox, you see what happens, and a
-mentor gives hints without handing over the solution.
+You write Python in the browser, it runs in a sandboxed subprocess with CPU
+and memory limits, and the mentor gives you hints without handing over the
+solution. No API keys required — the mentor falls back to a mock provider
+that keyword-matches common bug patterns.
 
-## What it does
+## What's in here
 
-- **Sandbox** — submissions run in a subprocess under `setrlimit` (2s CPU, 64MB
-  RAM, 1 process). Fork bombs and `while True:` both die quietly.
-- **AST analysis** — walks your code with Python's stdlib `ast` module, flags
-  nested loops, unmemoized recursion, and `list.index()` inside loops.
-- **Leveled hints** — 3 levels: conceptual nudge, algorithmic direction, or
-  targeted fix. You pick how much help to get.
-- **Leak guard** — catches code blocks, function defs, and "here's the full
-  solution" phrasing in LLM responses before they reach you.
-- **Hint cache** — same situation = same hint from memory. No second LLM call.
-- **LeetCode browser** — read-only catalog from their GraphQL API. Imported
-  problems run against statement examples in the sandbox (examples-only).
+The sandbox runs your code in a subprocess with `setrlimit`: 2s CPU, 64MB RAM,
+1 process. Fork bombs and `while True:` both die quietly. Your code is
+temp-filed, executed, and torn down before you get the results back.
 
-## How it works
+The AST analyzer walks your code with Python's stdlib `ast` module and flags
+the usual suspects: nested loops, unmemoized recursion, `list.index()` inside
+loops, that kind of thing. It also estimates big-O so the mentor prompt has
+some context.
 
-1. Your code + a test harness is written to a temp file, run as a subprocess
-   with rlimits via `preexec_fn`.
+Hints come in 3 levels. Level 1 is a conceptual nudge, level 2 points at the
+right data structure or invariant, level 3 is more targeted. You pick how
+much help you want. Everything the LLM says goes through a leak guard first —
+regex checks for code blocks, function/class defs, and phrases like "here is
+the complete solution." If it trips, you get a generic fallback instead.
+
+The hint cache is just a dict keyed on problem + hint level + analyzer verdict.
+Same situation = same hint from memory, no second LLM call. It's in-memory
+only though, so restarts clear it.
+
+There's also a read-only LeetCode browser backed by their GraphQL API.
+Imported problems run against the statement's example blocks only — not their
+hidden test cases, which aren't public. That's by design.
+
+## How it actually works
+
+1. Your code + a test harness is written to a temp file and run as a
+   subprocess. `preexec_fn` applies the rlimits before exec.
 2. The AST walker checks for complexity smells.
-3. Hint cache is checked — if it's a hit, skip the LLM entirely.
-4. On a miss, the LLM (Gemini/OpenAI, or a mock fallback) gets a structured
+3. Hint cache is checked — if it's a hit, we skip the LLM entirely.
+4. On a miss, the LLM (Gemini/OpenAI, or mock fallback) gets a structured
    prompt with your code, AST metrics, and what the sandbox found.
-5. Every LLM response goes through LeakGuard before you see it.
+5. Every LLM response goes through the leak guard before you see it.
 
-## Quick start
+## Getting it running
 
 ```bash
 git clone https://github.com/rajdeep-3305/Runedact.git
@@ -40,31 +53,29 @@ cd frontend && npm install && npm run build && cd ..
 ./start.sh
 ```
 
-Open http://localhost:8000. No API keys needed — the mentor falls back to a mock
-provider that keyword-matches common bug patterns.
+Then open http://localhost:8000.
 
-## API
+You can also use the Makefile targets: `make install`, `make run`, `make dev`,
+`make test`, `make lint`.
 
-| Method | Route | What |
-|--------|-------|------|
-| GET | /api/v1/problems | List problems |
-| GET | /api/v1/problems/{id} | Full statement + starter code |
-| POST | /api/v1/run | Execute in sandbox |
-| POST | /api/v1/analyze | AST-only, no execution |
-| POST | /api/v1/mentor/hint | Get a leveled hint |
-| POST | /api/v1/evals/run | Run benchmark |
-| GET | /api/v1/evals/history | Past benchmark runs |
+## API endpoints
+
+- `GET  /api/v1/problems` — list problems
+- `GET  /api/v1/problems/{id}` — full statement + starter code
+- `POST /api/v1/run` — execute in sandbox
+- `POST /api/v1/analyze` — AST only, no execution
+- `POST /api/v1/mentor/hint` — get a leveled hint
+- `POST /api/v1/evals/run` — run the eval benchmark
+- `GET  /api/v1/evals/history` — past benchmark runs
 
 ## Sandbox limits
 
-| Resource | Limit | How |
-|----------|-------|-----|
-| CPU | 2s | RLIMIT_CPU + wall-clock timeout |
-| Memory | 64MB | RLIMIT_AS |
-| Processes | 1 | RLIMIT_NPROC |
+- CPU: 2s — `RLIMIT_CPU` + wall-clock timeout on the subprocess
+- Memory: 64MB — `RLIMIT_AS`
+- Processes: 1 — `RLIMIT_NPROC`
 
-> Honest note: this only limits resources, not filesystem or network. For real
-> isolation you'd want containers. I haven't gotten around to that yet.
+This only limits resources, not filesystem or network. For real isolation
+you'd want containers. I haven't gotten around to that yet.
 
 ## Eval dataset
 
@@ -72,7 +83,7 @@ provider that keyword-matches common bug patterns.
 you actually make: nested-loop brute force, duplicate index collision, counting
 brackets instead of a stack, popping an empty stack, greedy failure, unmemoized
 recursion, and infinite loop from a stuck pointer. The harness scores hints with
-simple string matching — no external APIs.
+simple string matching — no external judge API.
 
 ## Known issues
 
