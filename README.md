@@ -1,4 +1,6 @@
-# Runedact
+<p align="center">
+  <img src="docs/banner.png" alt="Runedact Banner" width="100%">
+</p>
 
 Practice DSA out loud — get hints, never answers.
 
