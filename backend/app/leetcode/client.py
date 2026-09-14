@@ -53,7 +53,7 @@ query getQuestionDetail($titleSlug: String!) {
 
 
 class LeetCodeError(Exception):
-
+    pass
 
 class _HTMLToText(HTMLParser):
 
