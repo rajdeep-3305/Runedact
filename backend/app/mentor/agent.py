@@ -5,6 +5,7 @@ from app.ast_analyzer.python_ast import analyze_code_ast
 from app.core.hint_cache import hint_cache
 
 from app.mentor.llm_provider import get_llm_provider
+from app.mentor.profile_store import profile_store
 from app.mentor.prompt_templates import MENTOR_SYSTEM_PROMPT, build_mentor_prompt
 from app.sandbox.executor import sandbox_executor
 from app.sandbox.problems import PROBLEMS
@@ -75,6 +76,7 @@ class MentorAgent:
         hint_level: int = 1,
         user_query: str = "",
         sandbox_result: Optional[Dict[str, Any]] = None,
+        session_id: str = "",
     ) -> Dict[str, Any]:
         problem = PROBLEMS.get(problem_id, {})
         title = problem.get("title", problem_id)
@@ -85,12 +87,19 @@ class MentorAgent:
         if sandbox_result is None:
             sandbox_result = sandbox_executor.run_submission(problem_id, code)
         sandbox_status = sandbox_result.get("status")
+        tags = problem.get("tags", [])
+        learner_summary = profile_store.summarize(session_id)
 
-        cached = self.cache.query(ast_summary, problem_id, hint_level, sandbox_status)
+        adapted_hint_level = hint_level
+        recent_statuses = learner_summary.get("recent_statuses", []) if learner_summary.get("known") else []
+        if recent_statuses and len(recent_statuses) >= 2 and recent_statuses[-1] != "accepted" and recent_statuses[-2] != "accepted":
+            adapted_hint_level = min(3, max(hint_level, 2))
+
+        cached = self.cache.query(ast_summary, problem_id, adapted_hint_level, sandbox_status)
         if cached:
             return {
                 "problem_id": problem_id,
-                "hint_level": hint_level,
+                "hint_level": adapted_hint_level,
                 "content": cached["content"],
                 "leaked_solution": False,
                 "ast_insights": ast_summary,
@@ -105,17 +114,24 @@ class MentorAgent:
             student_code=code,
             ast_summary=ast_summary,
             sandbox_result=sandbox_result,
-            hint_level=hint_level,
+            hint_level=adapted_hint_level,
             user_query=user_query,
+            learner_context=str(learner_summary),
         )
         llm_response = self.llm.generate(MENTOR_SYSTEM_PROMPT, prompt)
         content, was_leaked = LeakGuard.sanitize(llm_response.get("content", ""))
 
-        self.cache.index(ast_summary, problem_id, hint_level, content, sandbox_status)
+        self.cache.index(ast_summary, problem_id, adapted_hint_level, content, sandbox_status)
+        profile_store.record_attempt(
+            session_id=session_id,
+            status=sandbox_status or "unknown",
+            anti_patterns=ast_summary.get("anti_patterns", []),
+            tags=tags,
+        )
 
         return {
             "problem_id": problem_id,
-            "hint_level": hint_level,
+            "hint_level": adapted_hint_level,
             "content": content,
             "leaked_solution": was_leaked,
             "ast_insights": ast_summary,

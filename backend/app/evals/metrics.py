@@ -96,3 +96,21 @@ def hint_quality_score(content: str) -> float:
         score += 10.0
 
     return max(0.0, min(100.0, round(score, 1)))
+
+
+def helpfulness_score(content: str, sandbox_status: str, user_query: str = "") -> float:
+    text = content.lower()
+    score = 0.0
+
+    if "?" in content:
+        score += 25.0
+    if any(w in text for w in ("try", "check", "consider", "trace", "invariant", "edge case")):
+        score += 25.0
+    if sandbox_status and sandbox_status.replace("_", " ") in text:
+        score += 20.0
+    if user_query and any(token in text for token in user_query.lower().split() if len(token) > 4):
+        score += 15.0
+    if len(content.split()) <= 170:
+        score += 15.0
+
+    return max(0.0, min(100.0, round(score, 1)))

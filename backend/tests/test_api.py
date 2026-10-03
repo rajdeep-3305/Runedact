@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+from app.core.config import settings
 from app.main import app
 
 client = TestClient(app)
@@ -68,6 +69,15 @@ def test_mentor_hint():
     assert data["leaked_solution"] is False
 
 
+def test_mentor_hint_accepts_session_id():
+    code = "def two_sum(nums, target): return []"
+    response = client.post(
+        "/api/v1/mentor/hint",
+        json={"problem_id": "two-sum", "code": code, "hint_level": 1, "session_id": "demo-session"},
+    )
+    assert response.status_code == 200
+
+
 def test_hidden_cases_do_not_leak_expected_outputs():
     code = """
 def two_sum(nums: list[int], target: int) -> list[int]:
@@ -93,3 +103,26 @@ def test_run_rejects_oversized_code():
         json={"problem_id": "two-sum", "code": "x = 1\n" + "#" + "a" * 70_000},
     )
     assert response.status_code == 422
+
+
+def test_ops_metrics_endpoint_available():
+    response = client.get("/api/v1/ops/metrics")
+    assert response.status_code == 200
+    body = response.json()
+    assert "request_count" in body
+    assert "sandbox_status_counts" in body
+
+
+def test_api_key_auth_when_enabled():
+    old_enabled = settings.API_AUTH_ENABLED
+    old_key = settings.API_KEY
+    settings.API_AUTH_ENABLED = True
+    settings.API_KEY = "secret"
+    try:
+        denied = client.get("/api/v1/problems")
+        assert denied.status_code == 401
+        allowed = client.get("/api/v1/problems", headers={"x-api-key": "secret"})
+        assert allowed.status_code == 200
+    finally:
+        settings.API_AUTH_ENABLED = old_enabled
+        settings.API_KEY = old_key

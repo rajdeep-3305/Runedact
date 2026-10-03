@@ -1,14 +1,19 @@
 import os
+import time
+import uuid
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from app.api.router import api_router
 from app.core.config import settings
 from app.core.database import Base, engine
+from app.core.security import rate_limiter
+from app.core.telemetry import telemetry
 
 
 @asynccontextmanager
@@ -28,6 +33,27 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+
+@app.middleware("http")
+async def observability_and_throttling(request: Request, call_next):
+    started = time.perf_counter()
+    request_id = str(uuid.uuid4())
+    request.state.request_id = request_id
+    try:
+        if request.url.path.startswith(settings.API_V1_STR):
+            rate_limiter.check(request)
+        response = await call_next(request)
+    except Exception as exc:
+        if hasattr(exc, "status_code") and hasattr(exc, "detail"):
+            response = JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+        else:
+            raise
+    latency_ms = round((time.perf_counter() - started) * 1000, 2)
+    telemetry.record_request(request.url.path, response.status_code, latency_ms)
+    response.headers["X-Request-ID"] = request_id
+    response.headers["X-Response-Time-Ms"] = str(latency_ms)
+    return response
 
 
 @app.get("/health")

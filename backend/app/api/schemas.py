@@ -67,6 +67,7 @@ class MentorHintRequest(BaseModel):
     code: str = Field(max_length=65_536)
     hint_level: int = Field(default=1, ge=1, le=3)
     user_query: Optional[str] = ""
+    session_id: Optional[str] = Field(default="", min_length=0, max_length=128)
 
 
 class MentorHintResponse(BaseModel):
@@ -118,6 +119,7 @@ class EvalReportResponse(BaseModel):
     analysis_mention_pct: Optional[float] = 0.0
     concept_coverage_pct: Optional[float] = 0.0
     invariant_coverage_pct: Optional[float] = 0.0
+    helpfulness_pct: Optional[float] = 0.0
     quality_score: float
     avg_latency_ms: float
     results: List[Dict[str, Any]]

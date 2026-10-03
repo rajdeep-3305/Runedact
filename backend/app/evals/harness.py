@@ -7,6 +7,7 @@ from app.core.database import SessionLocal
 from app.evals.metrics import (
     covers_concepts,
     covers_invariants,
+    helpfulness_score,
     hint_quality_score,
     mentions_analysis,
 )
@@ -26,7 +27,7 @@ class EvalHarness:
 
     def run_benchmark(self, save_to_db: bool = True) -> Dict[str, Any]:
         results = []
-        totals = {"analysis": 0.0, "concepts": 0.0, "invariants": 0.0, "quality": 0.0}
+        totals = {"analysis": 0.0, "concepts": 0.0, "invariants": 0.0, "quality": 0.0, "helpfulness": 0.0}
         total_latency = 0.0
         leaks = 0
 
@@ -49,6 +50,7 @@ class EvalHarness:
             concepts_hit = covers_concepts(content, item.get("expected_flaw", ""), concepts)
             invs_hit = covers_invariants(content, concepts, invariants)
             quality = hint_quality_score(content)
+            helpfulness = helpfulness_score(content, guidance.get("sandbox_status", ""))
 
             if leaked:
                 leaks += 1
@@ -57,6 +59,7 @@ class EvalHarness:
             totals["concepts"] += concepts_hit
             totals["invariants"] += invs_hit
             totals["quality"] += quality
+            totals["helpfulness"] += helpfulness
             total_latency += latency
 
             results.append(
@@ -71,6 +74,7 @@ class EvalHarness:
                     "concepts_pct": concepts_hit,
                     "invs_pct": invs_hit,
                     "quality_score": quality,
+                    "helpfulness_score": helpfulness,
                     "latency_ms": latency,
                 }
             )
@@ -83,6 +87,7 @@ class EvalHarness:
             "analysis_mention_pct": round(totals["analysis"] / n, 1),
             "concept_coverage_pct": round(totals["concepts"] / n, 1),
             "invariant_coverage_pct": round(totals["invariants"] / n, 1),
+            "helpfulness_pct": round(totals["helpfulness"] / n, 1),
             "quality_score": round(totals["quality"] / n, 1),
             "avg_latency_ms": round(total_latency / n, 2),
             "results": results,

@@ -10,6 +10,14 @@ import { EvalDashboardModal } from './components/EvalDashboardModal';
 import { LeetCodeBrowserModal } from './components/LeetCodeBrowserModal';
 
 export const App: React.FC = () => {
+  const [sessionId] = useState<string>(() => {
+    const key = 'runedact.session_id';
+    const existing = localStorage.getItem(key);
+    if (existing) return existing;
+    const created = crypto.randomUUID();
+    localStorage.setItem(key, created);
+    return created;
+  });
   const [problems, setProblems] = useState<ProblemSummary[]>([]);
   const [selectedProblemId, setSelectedProblemId] = useState<string>('two-sum');
   const [currentProblem, setCurrentProblem] = useState<ProblemDetail | null>(null);
@@ -19,6 +27,7 @@ export const App: React.FC = () => {
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [executionResult, setExecutionResult] = useState<RunCodeResponse | null>(null);
   const [runError, setRunError] = useState<string | null>(null);
+  const [lastRequestId, setLastRequestId] = useState<string | null>(null);
   const [hintError, setHintError] = useState<string | null>(null);
   const [astData, setAstData] = useState<ASTAnalysisResponse | null>(null);
   const [isAnalyzingAST, setIsAnalyzingAST] = useState<boolean>(false);
@@ -111,6 +120,7 @@ export const App: React.FC = () => {
           body: JSON.stringify({ slug: practiceProblem.id, code })
         });
         if (res.ok) {
+          setLastRequestId(res.headers.get('x-request-id'));
           setExecutionResult(await res.json());
         } else if (res.status === 422) {
           setRunError('code is too large to run (64KB limit)');
@@ -193,11 +203,13 @@ export const App: React.FC = () => {
           problem_id: selectedProblemId,
           code: code,
           hint_level: hintLevel,
-          user_query: userQuery
+          user_query: userQuery,
+          session_id: sessionId
         })
       });
 
       if (res.ok) {
+        setLastRequestId(res.headers.get('x-request-id'));
         const data = await res.json();
         setMessages((prev) => [
           ...prev,
@@ -288,7 +300,7 @@ export const App: React.FC = () => {
             />
           </div>
           <div className="min-h-0 flex-[38]">
-            <ExecutionPane result={executionResult} isRunning={isRunning} error={runError} />
+            <ExecutionPane result={executionResult} isRunning={isRunning} error={runError} requestId={lastRequestId} />
           </div>
         </section>
 

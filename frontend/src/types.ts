@@ -112,6 +112,7 @@ export interface EvalReport {
   analysis_mention_pct: number;
   concept_coverage_pct: number;
   invariant_coverage_pct: number;
+  helpfulness_pct: number;
   quality_score: number;
   avg_latency_ms: number;
   results: EvalCaseResult[];
@@ -122,6 +123,10 @@ export interface EvalRunSummary {
   benchmark_name: string;
   total_samples: number;
   leak_rate_percentage: number;
+  analysis_mention_pct: number;
+  concept_coverage_pct: number;
+  invariant_coverage_pct: number;
+  helpfulness_pct: number;
   quality_score: number;
   avg_latency_ms: number;
   created_at: string | null;

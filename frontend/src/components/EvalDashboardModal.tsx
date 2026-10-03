@@ -82,7 +82,7 @@ export const EvalDashboardModal: React.FC<EvalDashboardModalProps> = ({ isOpen, 
         ) : (
           <>
             {/* headline + tiles */}
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-5 gap-2">
               <div className="col-span-1 rounded-md border border-zinc-800 bg-zinc-900/40 p-3">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-zinc-600">
                   leak rate
@@ -111,6 +111,15 @@ export const EvalDashboardModal: React.FC<EvalDashboardModalProps> = ({ isOpen, 
                 </div>
                 <div className="mt-1 font-mono text-xl font-bold text-zinc-100">
                   {report.concept_coverage_pct}
+                </div>
+                <div className="font-mono text-[10px] text-zinc-600">/100</div>
+              </div>
+              <div className="rounded-md border border-zinc-800 bg-zinc-900/40 p-3">
+                <div className="font-mono text-[10px] uppercase tracking-widest text-zinc-600">
+                  helpfulness
+                </div>
+                <div className="mt-1 font-mono text-xl font-bold text-zinc-100">
+                  {report.helpfulness_pct}
                 </div>
                 <div className="font-mono text-[10px] text-zinc-600">/100</div>
               </div>
@@ -186,6 +195,7 @@ export const EvalDashboardModal: React.FC<EvalDashboardModalProps> = ({ isOpen, 
                           leak {h.leak_rate_percentage}%
                         </span>
                         <span className="text-zinc-500">q {h.quality_score}</span>
+                        <span className="text-zinc-500">h {h.helpfulness_pct}</span>
                         <span className="text-zinc-600">{h.avg_latency_ms}ms</span>
                       </div>
                     </div>

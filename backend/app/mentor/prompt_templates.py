@@ -20,6 +20,7 @@ def build_mentor_prompt(
     sandbox_result: dict,
     hint_level: int,
     user_query: str = "",
+    learner_context: str = "",
 ) -> str:
     level_names = {1: "Level 1 (Conceptual)", 2: "Level 2 (Algorithmic)", 3: "Level 3 (Targeted Fix)"}
 
@@ -48,4 +49,5 @@ Sandbox Execution Results:
 
 Requested Hint Level: {level_names.get(hint_level, 'Level 1')}
 Learner's Question / Confusion: {user_query or "I am stuck or my tests are failing. Can you guide me?"}
+Learner Context: {learner_context or "new session"}
 """

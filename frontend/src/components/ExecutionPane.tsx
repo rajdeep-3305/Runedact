@@ -7,9 +7,10 @@ interface ExecutionPaneProps {
   result: RunCodeResponse | null;
   isRunning: boolean;
   error: string | null;
+  requestId: string | null;
 }
 
-export const ExecutionPane: React.FC<ExecutionPaneProps> = ({ result, isRunning, error }) => {
+export const ExecutionPane: React.FC<ExecutionPaneProps> = ({ result, isRunning, error, requestId }) => {
   const [selectedTab, setSelectedTab] = useState<number>(0);
   const [seenResult, setSeenResult] = useState<RunCodeResponse | null>(null);
 
@@ -67,6 +68,14 @@ export const ExecutionPane: React.FC<ExecutionPaneProps> = ({ result, isRunning,
     compilation_error: 'syntax error',
     error: 'sandbox error'
   };
+  const statusGuidance: Record<string, string> = {
+    wrong_answer: 'Check the first failing case and compare your invariant against expected behavior.',
+    time_limit_exceeded: 'Look for nested loops, infinite loops, or recursion without memoization.',
+    memory_limit_exceeded: 'Avoid building large intermediate arrays; stream or compress state instead.',
+    runtime_error: 'Inspect stderr and the failing test tab to pinpoint the crash line.',
+    compilation_error: 'Fix syntax/indentation first; then re-run before requesting mentor hints.',
+    error: 'Sandbox infrastructure error. Retry once; if it persists, use request ID for debugging.'
+  };
 
   const activeTest = result.test_results[selectedTab];
 
@@ -104,6 +113,11 @@ export const ExecutionPane: React.FC<ExecutionPaneProps> = ({ result, isRunning,
         {result.status !== 'accepted' && result.status !== 'wrong_answer' && (
           <div className="mb-3 rounded-md border border-rose-500/25 bg-rose-500/[0.07] px-3 py-2 font-mono text-xs text-rose-300">
             {statusText[result.status] ?? result.status}
+          </div>
+        )}
+        {result.status !== 'accepted' && (
+          <div className="mb-3 rounded-md border border-amber-500/25 bg-amber-500/[0.06] px-3 py-2 text-xs text-amber-200">
+            {statusGuidance[result.status] ?? statusGuidance.error}
           </div>
         )}
 
@@ -165,6 +179,7 @@ export const ExecutionPane: React.FC<ExecutionPaneProps> = ({ result, isRunning,
         <div className="flex items-center gap-3 text-zinc-500">
           <span className={latencyTone(result.execution_time_ms)}>{result.execution_time_ms} ms</span>
           <span>exit {result.exit_code}</span>
+          {requestId && <span>req {requestId.slice(0, 8)}</span>}
         </div>
       </div>
     </div>

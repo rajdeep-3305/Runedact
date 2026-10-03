@@ -21,6 +21,8 @@ from app.api.schemas import (
 )
 from app.ast_analyzer.python_ast import analyze_code_ast
 from app.core.database import get_db
+from app.core.security import require_api_key
+from app.core.telemetry import telemetry
 from app.evals.harness import eval_harness
 from app.leetcode.client import LeetCodeError, leetcode_client
 from app.mentor.agent import mentor_agent
@@ -30,7 +32,7 @@ from app.sandbox.problems import PROBLEMS
 
 logger = logging.getLogger(__name__)
 
-api_router = APIRouter()
+api_router = APIRouter(dependencies=[Depends(require_api_key)])
 
 
 @api_router.get("/problems", response_model=List[ProblemSummary])
@@ -127,6 +129,7 @@ def get_mentor_hint(req: MentorHintRequest, db: Session = Depends(get_db)):
         hint_level=req.hint_level,
         user_query=req.user_query,
         sandbox_result=sandbox_result,
+        session_id=req.session_id or "",
     )
 
     try:
@@ -233,15 +236,31 @@ def get_eval_history(db: Session = Depends(get_db)) -> List[Dict[str, Any]]:
         .limit(10)
         .all()
     )
-    return [
-        {
-            "id": r.id,
-            "benchmark_name": r.benchmark_name,
-            "total_samples": r.total_samples,
-            "leak_rate_percentage": r.leak_rate_percentage,
-            "quality_score": r.quality_score,
-            "avg_latency_ms": r.avg_latency_ms,
-            "created_at": r.created_at.isoformat() if r.created_at else None,
-        }
-        for r in runs
-    ]
+    history = []
+    for r in runs:
+        report_json = {}
+        try:
+            report_json = json.loads(r.report_json) if r.report_json else {}
+        except json.JSONDecodeError:
+            report_json = {}
+        history.append(
+            {
+                "id": r.id,
+                "benchmark_name": r.benchmark_name,
+                "total_samples": r.total_samples,
+                "leak_rate_percentage": r.leak_rate_percentage,
+                "quality_score": r.quality_score,
+                "avg_latency_ms": r.avg_latency_ms,
+                "analysis_mention_pct": report_json.get("analysis_mention_pct", 0.0),
+                "concept_coverage_pct": report_json.get("concept_coverage_pct", 0.0),
+                "invariant_coverage_pct": report_json.get("invariant_coverage_pct", 0.0),
+                "helpfulness_pct": report_json.get("helpfulness_pct", 0.0),
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+        )
+    return history
+
+
+@api_router.get("/ops/metrics")
+def get_ops_metrics() -> Dict[str, Any]:
+    return telemetry.snapshot()

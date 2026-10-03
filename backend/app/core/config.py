@@ -19,8 +19,14 @@ class Settings(BaseSettings):
     SANDBOX_TIMEOUT_SECONDS: int = 2
     SANDBOX_MEMORY_LIMIT_MB: int = 64
     SANDBOX_MAX_PROCESSES: int = 1
+    SANDBOX_MODE: str = "process"  # process | docker
+    SANDBOX_DOCKER_IMAGE: str = "python:3.12-alpine"
+    SANDBOX_DISABLE_NETWORK: bool = True
 
-    CORS_ORIGINS: List[str] = ["*"]
+    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    API_AUTH_ENABLED: bool = False
+    API_KEY: Optional[str] = None
+    RATE_LIMIT_PER_MINUTE: int = 120
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
